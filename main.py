@@ -1,9 +1,7 @@
 from flask import Flask
 import os
 from datetime import timedelta
-from dotenv import load_dotenv
-
-load_dotenv()
+import config
 
 from fit_mafia.app import app as fit_mafia_blueprint
 from health_check import app as health_blueprint

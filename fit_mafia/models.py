@@ -1,5 +1,4 @@
-from dotenv import load_dotenv
-load_dotenv()
+import config
 from sqlalchemy import Column, String, case
 from sqlalchemy.orm import class_mapper
 import datetime
@@ -79,3 +78,6 @@ class Transaction(Base):
     discount = Column(String(50), nullable=True)
     payment_method = Column(String(50), nullable=True)
     status = Column(String(50), nullable=True)
+
+# Create tables in the database if they do not exist
+db.init_db()

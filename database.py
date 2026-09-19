@@ -1,5 +1,4 @@
-from dotenv import load_dotenv
-load_dotenv()
+import config
 import os
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
@@ -27,6 +26,13 @@ class Database:
                 }
         elif db_url and db_url.startswith("postgres"):
             kwargs["connect_args"] = {"options": "-c search_path=fitmafia"}
+        elif db_url and db_url.startswith("sqlite"):
+            kwargs["connect_args"] = {"check_same_thread": False}
+            raw_path = db_url.replace("sqlite:///", "")
+            if raw_path:
+                parent_dir = os.path.dirname(raw_path)
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
 
         self.engine = create_engine(db_url, **kwargs)
         self.session = scoped_session(sessionmaker(bind=self.engine))
@@ -196,4 +202,4 @@ def migrate_data(source_db_url, dest_db_url, tables=None):
         print(f"An error occurred during data migration: {e}")
 
 if __name__ == '__main__':
-    migrate_data(os.getenv("PG_DATABASE_URL"), os.getenv("OCI_DATABASE_URL"),['transaction'])
+    migrate_data(os.getenv("PG_DATABASE_URL"), os.getenv("SQLITE_DATABASE_URL"),['member'])
