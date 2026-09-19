@@ -77,7 +77,7 @@ After=network.target
 [Service]
 User=$APP_USER
 WorkingDirectory=$APP_DIR
-ExecStart=$APP_DIR/.venv/bin/python app.py
+ExecStart=$APP_DIR/.venv/bin/python main.py
 Restart=always
 
 EnvironmentFile=/home/opc/secret/.env

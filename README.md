@@ -40,6 +40,52 @@
 * **Wallet Path:** `os.getenv("ORACLE_WALLET_PATH")` (default: `./wallet`)
 * **Wallet Password:** `os.getenv("DB_WALLET_PASSWORD")`
 
+### 5. 🦆 DuckDNS Domain Setup
+> **Note:** OCI assigns a **Static Reserved Public IP** (`140.245.230.89`). Dynamic cron updates are **not required**. You only need a one-time DNS mapping.
+
+* **Domain Name:** `your-domain.duckdns.org`
+* **Static OCI Public IP:** `140.245.230.89`
+* **One-Time Setup Command:**
+  ```bash
+  curl "https://www.duckdns.org/update?domains=your-domain&token=your-duckdns-token&ip=140.245.230.89"
+  ```
+
+### 6. 🌐 Nginx Reverse Proxy Setup
+* **Configuration File:** `/etc/nginx/conf.d/fitmafia.conf`
+* **Sample Reverse Proxy Configuration:**
+  ```nginx
+  server {
+      listen 80;
+      server_name your-domain.duckdns.org;
+
+      location / {
+          proxy_pass http://127.0.0.1:5000;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+      }
+  }
+  ```
+
+### 7. 🔒 SSL / TLS Certificate Setup (Let's Encrypt & Certbot)
+* **Certbot Package Installation:**
+  ```bash
+  # Oracle Linux / RHEL:
+  sudo dnf install certbot python3-certbot-nginx -y
+
+  # Ubuntu / Debian:
+  sudo apt update && sudo apt install certbot python3-certbot-nginx -y
+  ```
+* **Obtain SSL Certificate & Update Nginx Automatically:**
+  ```bash
+  sudo certbot --nginx -d your-domain.duckdns.org
+  ```
+* **Test SSL Auto-Renewal:**
+  ```bash
+  sudo certbot renew --dry-run
+  ```
+
 ---
 
 ## ⚙️ Configuration Setup (`properties.ini` & `.env`)
@@ -57,7 +103,6 @@ region = ap-hyderabad-1
 
 [database]
 oracle_wallet_path = C:/oracle/hyderabad/Wallet
-sqlite_database_url = sqlite:///C:/sqlite/fitmafia.db
 
 [app]
 host = 127.0.0.1
@@ -99,42 +144,65 @@ fitmafia/
 │   ├── constants.py      # Application constants
 │   ├── static/           # Static web assets
 │   └── templates/        # HTML templates
+├── service/              # Automated Linux systemd service & deployment scripts
+│   ├── register_service.sh # 1-Command service installer, dependency manager & systemd setup
+│   └── README.md
 ├── requirements.txt      # Python dependencies
 └── sonar-project.properties # SonarQube quality analysis config
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Production Deployment
 
-### 1. Prerequisites & Virtual Environment
+### ⚡ Option A: Automated Linux / OCI Service Deployment (Recommended)
 
-Ensure Python 3.9+ is installed:
+Run the automated service registration script [`service/register_service.sh`](file:///c:/Linux/fitmafia/service/register_service.sh). It automatically performs git updates, creates/activates `.venv`, installs `requirements.txt`, configures `dashboard.service` under systemd, and starts/monitors the background service!
 
 ```bash
+# Make script executable & run setup
+chmod +x service/register_service.sh
+./service/register_service.sh
+```
+
+**Managing `dashboard.service`:**
+```bash
+# Check status
+sudo systemctl status dashboard.service
+
+# View live service logs
+sudo journalctl -u dashboard.service -f
+
+# Restart / Stop service
+sudo systemctl restart dashboard.service
+sudo systemctl stop dashboard.service
+```
+
+---
+
+### 💻 Option B: Manual Setup (Local / Windows Development)
+
+#### 1. Setup Virtual Environment
+```bash
 # Create virtual environment
-python -m venv venv
+python -m venv .venv
 
 # Activate virtual environment
 # Windows (PowerShell):
-.\venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 # Linux/macOS:
-source venv/bin/activate
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Running the Application
-
-**Development Server:**
+#### 2. Running the Application
 ```bash
+# Development Mode
 python main.py
-```
-App runs at `http://127.0.0.1:5000` with Swagger UI documentation enabled.
 
-**Production (Waitress WSGI):**
-```bash
+# Production Mode (Waitress WSGI)
 waitress-serve --port=5000 main:main_app
 ```
 
