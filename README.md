@@ -107,6 +107,9 @@ oracle_wallet_path = C:/oracle/hyderabad/Wallet
 [app]
 host = 127.0.0.1
 port = 5000
+
+[env]
+env_path = /home/opc/secret/.env
 ```
 
 ### 2. `.env` (Sensitive Credentials - `.gitignore`)
@@ -208,20 +211,24 @@ waitress-serve --port=5000 main:main_app
 
 ---
 
-## 🗄️ Database & Alembic Migrations
+## 🔄 Automated CI/CD Deployment Pipeline (GitHub Actions)
 
-### Generate Migration Script
-```bash
-alembic revision --autogenerate -m "Description of changes"
-```
+This repository includes an automated CI/CD deployment pipeline configured in [`.github/workflows/oracle_flow.yml`](file:///c:/Linux/fitmafia/.github/workflows/oracle_flow.yml).
 
-### Apply Migrations
-```bash
-alembic upgrade head
-```
+### Workflow Stages:
+Whenever code is **pushed to the `main` branch**:
+1. **🧪 Automated Tests**: Runs `pytest` and generates coverage metrics.
+2. **🔍 Code Quality Scan**: Runs SonarCloud quality gate analysis.
+3. **🚀 Automated Deployment to OCI VM**:
+   - Connects to your OCI instance (`140.245.230.89`) via SSH as `opc`.
+   - Runs `git pull origin main` to pull latest changes.
+   - Activates `.venv` and updates dependencies (`pip install -r requirements.txt`).
+   - Automatically restarts the background service (`sudo systemctl restart dashboard.service`).
 
-### Run Data Migration Utility
-To migrate data from PostgreSQL to Oracle Autonomous DB (or vice versa):
-```bash
-python database.py
-```
+### Required GitHub Secrets:
+Add the following secret in **GitHub Repository > Settings > Secrets and variables > Actions**:
+
+| Secret Name | Description |
+| :--- | :--- |
+| **`ORACLE_VM_SSH_KEY`** | The private SSH key (`id_rsa`) corresponding to the public key authorized on your OCI VM. |
+| **`SONAR_TOKEN`** | *(Optional)* SonarCloud authentication token for quality scans. |

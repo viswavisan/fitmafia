@@ -28,7 +28,7 @@ jobs:
         run: |
           pytest --cov=fit_mafia --cov-report=xml:coverage.xml
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'sqlite:///test.db' }}
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -72,6 +72,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: scan   # ensures deploy runs only if tests + scan succeed
     steps:
       - name: Deploy to Oracle VM via SSH
@@ -81,7 +82,9 @@ jobs:
           username: opc
           key: ${{ secrets.ORACLE_VM_SSH_KEY }}
           script: |
-            cd ~/applications
+            cd ~/fitmafia
             git pull origin main
+            [ -d ".venv" ] || python3 -m venv .venv
+            source .venv/bin/activate
             pip install -r requirements.txt
-            sudo systemctl restart flaskapp.service
+            sudo systemctl restart dashboard.service || sudo systemctl restart flaskapp.service
