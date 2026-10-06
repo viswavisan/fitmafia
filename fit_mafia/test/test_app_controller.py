@@ -3,7 +3,7 @@ import datetime
 from unittest.mock import patch, MagicMock
 from fit_mafia.app_controller import (
     home, logout, register_transaction, print_receipt,
-    register_member, update_member, update_vitals, renew_subscription, get_member, login,
+    register_member, update_member, delete_member, update_vitals, renew_subscription, get_member, login,
     calculate_end_date, handle_session_timeout, create_db_session
 )
 from fit_mafia.constants import INTERNAL_SERVER_ERROR, MEMBER_NOT_FOUND
@@ -665,6 +665,42 @@ def test_renew_subscription_success(mock_db_session):
         mock_db_session.commit.assert_called_once()
 
 
+@patch('fit_mafia.app_controller.db.session')
+def test_renew_subscription_with_dict(mock_db_session):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        request_dict = {
+            'mobile_number': '9999999999',
+            'subscription': '1 Month',
+            'subscription_start_date': '2023-01-01',
+            'subscription_end_date': '2023-02-01',
+            'amount': '1500',
+            'payment_method': 'UPI',
+            'discount': '0'
+        }
+
+        mock_member = MagicMock(spec=Member)
+        mock_member.first_name = "Jane"
+        mock_member.last_name = "Smith"
+        mock_member.mobile_number = "9999999999"
+
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
+
+        result = renew_subscription(mock_session, request_dict)
+
+        assert result['status'] == 'success'
+        assert result['code'] == 200
+        mock_db_session.add.assert_called_once()
+        added_object = mock_db_session.add.call_args[0][0]
+        assert isinstance(added_object, Transaction)
+        assert added_object.amount == '1500'
+        assert added_object.payment_method == 'UPI'
+        mock_db_session.commit.assert_called_once()
+
+
+
 def test_renew_subscription_unauthorized():
     with app.test_request_context():
         mock_session = {'role': 'member'}
@@ -913,3 +949,83 @@ def test_create_db_session_exception(mock_db_session, mock_logging):
     assert session_id is None
     mock_db_session.rollback.assert_called_once()
     mock_logging.exception.assert_called_once()
+
+
+# --- DELETE MEMBER TESTS ---
+
+@patch('fit_mafia.app_controller.db.session')
+def test_delete_member_success(mock_db_session):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+
+        mock_member = MagicMock(spec=Member)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
+
+        result = delete_member(mock_session, mobile_number)
+
+        assert result['status'] == 'success'
+        assert result['code'] == 200
+        mock_db_session.delete.assert_called_once_with(mock_member)
+        mock_db_session.commit.assert_called_once()
+
+
+def test_delete_member_unauthorized():
+    with app.test_request_context():
+        mock_session = {'role': 'member'}
+        result = delete_member(mock_session, '1234567890')
+
+        assert result['status'] == 'error'
+        assert result['code'] == 403
+        assert result['message'] == 'Unauthorized'
+
+
+def test_delete_member_missing_mobile():
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        result = delete_member(mock_session, '')
+
+        assert result['status'] == 'error'
+        assert result['code'] == 400
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_delete_member_not_found(mock_db_session):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = None
+
+        result = delete_member(mock_session, mobile_number)
+
+        assert result['status'] == 'failure'
+        assert result['code'] == 404
+        assert result['message'] == MEMBER_NOT_FOUND
+
+
+@patch('fit_mafia.app_controller.logging')
+@patch('fit_mafia.app_controller.db.session')
+def test_delete_member_exception(mock_db_session, mock_logging):
+    with app.test_request_context():
+        mock_session = {'role': 'admin'}
+        mobile_number = '1234567890'
+
+        mock_member = MagicMock(spec=Member)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
+        mock_db_session.commit.side_effect = Exception("DB Delete Error")
+
+        result = delete_member(mock_session, mobile_number)
+
+        assert result['status'] == 'error'
+        assert result['code'] == 500
+        assert result['message'] == INTERNAL_SERVER_ERROR
+        mock_db_session.rollback.assert_called_once()
+        mock_logging.exception.assert_called_once()
+

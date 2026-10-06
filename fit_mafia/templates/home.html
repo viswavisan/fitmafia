@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,541 +10,387 @@
     <!-- Bootstrap CSS for styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('fit_mafia.static', filename='home.css') }}">
 </head>
+
 <body>
 
-<!-- Loading Overlay -->
-<div id="loadingOverlay" class="d-none">
-    <output class="spinner-border text-primary" aria-live="assertive" aria-busy="true">
-        <span class="visually-hidden">Loading...</span>
-    </output>
-</div>
-
-<!-- Camera Overlay -->
-<div id="cameraOverlay" class="d-none">
-    <h3 class="text-white mb-3">Capture Photo</h3>
-    <video id="cameraVideo" autoplay playsinline></video>
-    <canvas id="cameraCanvas" class="d-none"></canvas>
-    <div class="camera-controls">
-        <button type="button" class="btn btn-light" id="captureBtn">
-            <i class="bi bi-camera"></i> Capture
-        </button>
-        <button type="button" class="btn btn-danger" id="closeCameraBtn">
-            <i class="bi bi-x-lg"></i> Cancel
-        </button>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="d-none">
+        <output class="spinner-border text-primary" aria-live="assertive" aria-busy="true">
+            <span class="visually-hidden">Loading...</span>
+        </output>
     </div>
-</div>
 
-<!-- Mobile Sidebar Off canvas -->
-<div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-    <div class="offcanvas-header border-bottom border-secondary">
-        <h5 class="offcanvas-title" id="mobileSidebarLabel">
-            <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Logo" style="max-height: 40px; margin-right: 10px; border-radius: 4px;">
-            Fit Mafia
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body p-0 d-flex flex-column pt-3">
-        <div>
-            <!-- Restrict visibility of admin-only sidebar buttons -->
-            {% if current_user.role == 'admin' %}
-            <button class="sidebar-btn active" onclick="showSection('dashboard', event); closeOffcanvas()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</button>
-            <button class="sidebar-btn" onclick="showSection('register', event); closeOffcanvas()"><i class="bi bi-person-plus me-2"></i> New Member</button>
-            <button class="sidebar-btn" onclick="showSection('members', event); closeOffcanvas()"><i class="bi bi-people-fill me-2"></i> Member List</button>
-            <button class="sidebar-btn" onclick="showSection('transactions', event); closeOffcanvas()"><i class="bi bi-receipt me-2"></i> Transactions</button>
-            {% else %}
-            <!-- Member sees only profile and their transactions -->
-            <button class="sidebar-btn active" onclick="showSection('viewMemberDetails', event); closeOffcanvas()"><i class="bi bi-person-circle me-2"></i> My Profile</button>
-            <button class="sidebar-btn" onclick="showSection('transactions', event); closeOffcanvas()"><i class="bi bi-receipt me-2"></i> Transactions</button>
-            {% endif %}
-        </div>
-        <div class="mt-auto mb-3">
-            <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'">Logout</button>
+    <!-- Camera Overlay -->
+    <div id="cameraOverlay" class="d-none">
+        <h3 class="text-white mb-3">Capture Photo</h3>
+        <video id="cameraVideo" autoplay playsinline></video>
+        <canvas id="cameraCanvas" class="d-none"></canvas>
+        <div class="camera-controls">
+            <button type="button" class="btn btn-light" id="captureBtn">
+                <i class="bi bi-camera"></i> Capture
+            </button>
+            <button type="button" class="btn btn-danger" id="closeCameraBtn">
+                <i class="bi bi-x-lg"></i> Cancel
+            </button>
         </div>
     </div>
-</div>
 
-<div class="container-fluid p-0">
-    <div class="row g-0">
-        <!-- Sidebar (Hidden on mobile) -->
-        <nav class="col-md-2 sidebar d-none d-md-flex flex-column" aria-label="Main Sidebar">
+    <!-- Mobile Sidebar Off canvas -->
+    <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobileSidebar"
+        aria-labelledby="mobileSidebarLabel">
+        <div class="offcanvas-header border-bottom border-secondary">
+            <h5 class="offcanvas-title" id="mobileSidebarLabel">
+                <img src="{{ url_for('fit_mafia.static', filename='logo.png') }}" alt="Logo"
+                    style="max-height: 40px; margin-right: 10px; border-radius: 4px;">
+                Fit Mafia
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+                aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0 d-flex flex-column pt-3">
             <div>
-                <div class="text-center mb-4">
-                    <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Logo" style="max-width: 80%; border-radius: 8px;">
-                </div>
+                <!-- Restrict visibility of admin-only sidebar buttons -->
                 {% if current_user.role == 'admin' %}
-                <button class="sidebar-btn active" onclick="showSection('dashboard', event)"><i class="bi bi-speedometer2 me-2"></i> Dashboard</button>
-                <button class="sidebar-btn" onclick="showSection('register', event)"><i class="bi bi-person-plus me-2"></i> New Member</button>
-                <button class="sidebar-btn" onclick="showSection('members', event)"><i class="bi bi-people-fill me-2"></i> Member List</button>
-                <button class="sidebar-btn" onclick="showSection('transactions', event)"><i class="bi bi-receipt me-2"></i> Transactions</button>
+                <button class="sidebar-btn active" onclick="showSection('dashboard', event); closeOffcanvas()"><i
+                        class="bi bi-speedometer2 me-2"></i> Dashboard</button>
+                <button class="sidebar-btn" onclick="showSection('register', event); closeOffcanvas()"><i
+                        class="bi bi-person-plus me-2"></i> New Member</button>
+                <button class="sidebar-btn" onclick="showSection('members', event); closeOffcanvas()"><i
+                        class="bi bi-people-fill me-2"></i> Member List</button>
+                <button class="sidebar-btn" onclick="showSection('transactions', event); closeOffcanvas()"><i
+                        class="bi bi-receipt me-2"></i> Transactions</button>
                 {% else %}
                 <!-- Member sees only profile and their transactions -->
-                <button class="sidebar-btn active" onclick="showSection('viewMemberDetails', event)"><i class="bi bi-person-circle me-2"></i> My Profile</button>
-                <button class="sidebar-btn" onclick="showSection('transactions', event)"><i class="bi bi-receipt me-2"></i> Transactions</button>
+                <button class="sidebar-btn active"
+                    onclick="showSection('viewMemberDetails', event); closeOffcanvas()"><i
+                        class="bi bi-person-circle me-2"></i> My Profile</button>
+                <button class="sidebar-btn" onclick="showSection('transactions', event); closeOffcanvas()"><i
+                        class="bi bi-receipt me-2"></i> Transactions</button>
                 {% endif %}
             </div>
             <div class="mt-auto mb-3">
-                <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'"><i class="bi bi-box-arrow-right me-2"></i> Logout</button>
+                <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'">Logout</button>
             </div>
-        </nav>
+        </div>
+    </div>
 
-        <!-- Main Content -->
-        <main class="col-12 col-md-10 content">
-            <!-- Top Navigation Bar with UserName -->
-            <div class="top-navbar" aria-label="Top Navigation">
-                <div class="d-flex align-items-center">
-                    <button class="btn btn-outline-secondary d-md-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-label="Open mobile menu">
-                        &#9776;
-                    </button>
-                </div>
-                <div class="user-profile">
-                    <span class="text-secondary d-none d-sm-inline">Welcome,</span>
-                    <strong class="text-dark">{{ current_user.display_name | default('Admin User') }}</strong>
-                    <div class="user-avatar">
-                        {{ (current_user.display_name | default('A'))[0] | upper }}
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar (Hidden on mobile) -->
+            <nav class="col-md-2 sidebar d-none d-md-flex flex-column" aria-label="Main Sidebar">
+                <div>
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('fit_mafia.static', filename='logo.png') }}" alt="Logo"
+                            style="max-width: 80%; border-radius: 8px;">
                     </div>
+                    {% if current_user.role == 'admin' %}
+                    <button class="sidebar-btn active" onclick="showSection('dashboard', event)"><i
+                            class="bi bi-speedometer2 me-2"></i> Dashboard</button>
+                    <button class="sidebar-btn" onclick="showSection('register', event)"><i
+                            class="bi bi-person-plus me-2"></i> New Member</button>
+                    <button class="sidebar-btn" onclick="showSection('members', event)"><i
+                            class="bi bi-people-fill me-2"></i> Member List</button>
+                    <button class="sidebar-btn" onclick="showSection('transactions', event)"><i
+                            class="bi bi-receipt me-2"></i> Transactions</button>
+                    {% else %}
+                    <!-- Member sees only profile and their transactions -->
+                    <button class="sidebar-btn active" onclick="showSection('viewMemberDetails', event)"><i
+                            class="bi bi-person-circle me-2"></i> My Profile</button>
+                    <button class="sidebar-btn" onclick="showSection('transactions', event)"><i
+                            class="bi bi-receipt me-2"></i> Transactions</button>
+                    {% endif %}
                 </div>
-            </div>
+                <div class="mt-auto mb-3">
+                    <button class="sidebar-btn text-danger" onclick="window.location.href='/logout'"><i
+                            class="bi bi-box-arrow-right me-2"></i> Logout</button>
+                </div>
+            </nav>
 
-            <!-- Dashboard Overview (Admin Only) -->
-            {% if current_user.role == 'admin' %}
-            <div id="dashboard" class="section active">
-                <h2>Overview</h2>
-                <div class="row mt-4">
-                    <div class="col-md-4">
-                        <button class="card text-white bg-primary mb-3 shadow clickable-card w-100 border-0 text-start" onclick="filterMembers('')">
-                            <span class="card-body d-block">
-                                <span class="card-title h5 d-block">Total Members</span>
-                                <span class="card-text fs-2 d-block">{{ total_members }}</span>
-                            </span>
+            <!-- Main Content -->
+            <main class="col-12 col-md-10 content">
+                <!-- Top Navigation Bar with UserName -->
+                <div class="top-navbar" aria-label="Top Navigation">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-outline-secondary d-md-none me-3" type="button"
+                            data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-label="Open mobile menu">
+                            &#9776;
                         </button>
                     </div>
-                    <div class="col-md-4">
-                        <button class="card text-white bg-success mb-3 shadow clickable-card w-100 border-0 text-start" onclick="filterMembers('active')">
-                            <span class="card-body d-block">
-                                <span class="card-title h5 d-block">Active Members</span>
-                                <span class="card-text fs-2 d-block">{{ active_members }}</span>
-                            </span>
-                        </button>
-                    </div>
-                    <div class="col-md-4">
-                        <button class="card text-white bg-secondary mb-3 shadow clickable-card w-100 border-0 text-start" onclick="filterMembers('expired')">
-                            <span class="card-body d-block">
-                                <span class="card-title h5 d-block">Inactive Members</span>
-                                <span class="card-text fs-2 d-block">{{ inactive_members }}</span>
-                            </span>
-                        </button>
+                    <div class="user-profile">
+                        <span class="text-secondary d-none d-sm-inline">Welcome,</span>
+                        <strong class="text-dark">{{ current_user.display_name | default('Admin User') }}</strong>
+                        <div class="user-avatar">
+                            {{ (current_user.display_name | default('A'))[0] | upper }}
+                        </div>
                     </div>
                 </div>
-            </div>
-            {% endif %}
 
-            <!-- New Member Registration / Edit (Only visible for admin) -->
-            <div id="register" class="section">
-                <h2 id="registerFormTitle">New Member Registration</h2>
-                <div class="card mt-4 shadow-sm">
-                    <div class="card-body">
-                        <form id="memberForm" action="/register_member" method="POST" enctype="multipart/form-data">
-                            <div class="row mb-3">
-                                <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                    <label for="firstName" class="form-label">First Name</label>
-                                    <input type="text" class="form-control" id="firstName" name="first_name" required>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <label for="lastName" class="form-label">Last Name</label>
-                                    <input type="text" class="form-control" id="lastName" name="last_name" required>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                    <label for="mobile_number" class="form-label">Mobile Number</label>
-                                    <!-- Using readonly on edit so they can't change primary key -->
-                                    <input type="tel" class="form-control" id="mobile_number" name="mobile_number" required pattern="\d{10}" title="Mobile number must be 10 digits" oninput="this.setCustomValidity('')" oninvalid="this.setCustomValidity('Mobile number must be 10 digits')">
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <label for="email" class="form-label">Email Address *</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                    <label for="password" class="form-label">Password *</label>
-                                    <div class="input-group">
-                                        <input type="password" class="form-control" id="password" name="password" required>
-                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                            <i class="bi bi-eye-slash"></i>
-                                        </button>
+                <!-- Dashboard Overview (Admin Only) -->
+                {% if current_user.role == 'admin' %}
+                <div id="dashboard" class="section active">
+                    <h2>Overview</h2>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <button
+                                class="card text-white bg-primary mb-3 shadow clickable-card w-100 border-0 text-start"
+                                onclick="filterMembers('')">
+                                <span class="card-body d-block">
+                                    <span class="card-title h5 d-block">Total Members</span>
+                                    <span class="card-text fs-2 d-block">{{ total_members }}</span>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button
+                                class="card text-white bg-success mb-3 shadow clickable-card w-100 border-0 text-start"
+                                onclick="filterMembers('active')">
+                                <span class="card-body d-block">
+                                    <span class="card-title h5 d-block">Active Members</span>
+                                    <span class="card-text fs-2 d-block">{{ active_members }}</span>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button
+                                class="card text-white bg-secondary mb-3 shadow clickable-card w-100 border-0 text-start"
+                                onclick="filterMembers('expired')">
+                                <span class="card-body d-block">
+                                    <span class="card-title h5 d-block">Inactive Members</span>
+                                    <span class="card-text fs-2 d-block">{{ inactive_members }}</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- New Member Registration / Edit (Only visible for admin) -->
+                <div id="register" class="section">
+                    <h2 id="registerFormTitle">New Member Registration</h2>
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-body">
+                            <form id="memberForm" action="/register_member" method="POST" enctype="multipart/form-data">
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="firstName" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="firstName" name="first_name"
+                                            required>
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                    <label for="dob" class="form-label">Date of Birth</label>
-                                    <input type="date" class="form-control" id="dob" name="dob">
+                                <div class="row mb-3">
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
+                                        <label for="mobile_number" class="form-label">Mobile Number</label>
+                                        <!-- Using readonly on edit so they can't change primary key -->
+                                        <input type="tel" class="form-control" id="mobile_number" name="mobile_number"
+                                            required pattern="\d{10}" title="Mobile number must be 10 digits"
+                                            oninput="this.setCustomValidity('')"
+                                            oninvalid="this.setCustomValidity('Mobile number must be 10 digits')">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <input type="email" class="form-control" id="email" name="email">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-12 col-md-6">
-                                    <label for="gender" class="form-label">Gender *</label>
-                                    <select class="form-select" id="gender" name="gender" required>
-                                        <option value="">Select Gender</option>
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                <div class="row mb-3">
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
+                                        <label for="password" class="form-label">Password *</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="password" name="password"
+                                                required>
+                                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                                <i class="bi bi-eye-slash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6 mb-3 mb-md-0">
+                                        <label for="dob" class="form-label">Date of Birth</label>
+                                        <input type="date" class="form-control" id="dob" name="dob">
+                                    </div>
                                 </div>
-                                <div class="col-12 col-md-6">
-                                    <label for="joining_date" class="form-label">Joining Date</label>
-                                    <input type="date" class="form-control" id="joining_date" name="joining_date">
+                                <div class="row mb-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="gender" class="form-label">Gender *</label>
+                                        <select class="form-select" id="gender" name="gender" required>
+                                            <option value="">Select Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="joining_date" class="form-label">Joining Date</label>
+                                        <input type="date" class="form-control" id="joining_date" name="joining_date">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Address *</label>
-                                <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label for="photo" class="form-label">Photo</label>
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
-                                    <span class="text-muted">OR</span>
-                                    <button type="button" class="btn btn-outline-secondary text-nowrap" id="openCameraBtn">
-                                        <i class="bi bi-camera"></i> Capture
-                                    </button>
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3"></textarea>
                                 </div>
-                                <!-- Hidden input to store captured base64 image data -->
-                                <input type="hidden" id="capturedPhotoData" name="captured_photo">
-                                <!-- Preview of captured or selected image -->
-                                <img id="photoPreview" src="" alt="Preview">
-                            </div>
+                                <div class="mb-3">
+                                    <label for="photo" class="form-label">Photo</label>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <input type="file" class="form-control" id="photo" name="photo"
+                                            accept="image/*">
+                                        <span class="text-muted">OR</span>
+                                        <button type="button" class="btn btn-outline-secondary text-nowrap"
+                                            id="openCameraBtn">
+                                            <i class="bi bi-camera"></i> Capture
+                                        </button>
+                                    </div>
+                                    <!-- Hidden input to store captured base64 image data -->
+                                    <input type="hidden" id="capturedPhotoData" name="captured_photo">
+                                    <!-- Preview of captured or selected image -->
+                                    <img id="photoPreview" src="" alt="Preview">
+                                </div>
 
-                            <hr>
-                            <div class="mb-3" id="termsContainer">
-                                <h5>Gym Subscription – Terms and Conditions</h5>
-                                <div class="border p-3 mb-2 rounded bg-light" style="max-height: 150px; overflow-y: auto; font-size: 0.9em;">
-                                    <p><strong>1. Membership Activation:</strong> Membership becomes active only after full or agreed payment is received. Access is limited to the subscription period purchased.</p>
-                                    <p><strong>2. Payment Terms:</strong> All fees must be paid in advance unless otherwise agreed in writing. Failure to make payments may result in immediate suspension or termination of membership.</p>
-                                    <p><strong>3. No Refund Policy:</strong> All payments are final and non-refundable unless required by applicable law.</p>
-                                    <p><strong>4. Cancellation Policy:</strong> Cancellation requests must be submitted in writing. Any agreed notice period must be completed before cancellation takes effect.</p>
-                                    <p><strong>5. Health Responsibility:</strong> Members confirm that they are physically and medically fit to participate in exercise. It is the member’s responsibility to consult a medical professional before engaging in any fitness activities.</p>
-                                    <p><strong>6. Injury and Health Liability Waiver:</strong> The gym, its owners, staff, and affiliates are not responsible or liable for:</p>
-                                    <ul>
-                                        <li>Any injuries sustained while using the facilities or equipment</li>
-                                        <li>Any accidents occurring on the premises</li>
-                                        <li>Any health conditions arising during or after workouts</li>
-                                        <li>Serious medical events, including but not limited to heart attacks, strokes, or other medical emergencies</li>
-                                    </ul>
-                                    <p>By using the gym, members accept all risks associated with physical exercise and waive any claims against the gym to the fullest extent permitted by law.</p>
-                                    <p><strong>7. Use of Equipment and Facilities:</strong> Members must use equipment responsibly and follow all instructions provided by staff. Unsafe or inappropriate behavior may result in termination of membership without refund.</p>
-                                    <p><strong>8. Personal Belongings:</strong> The gym is not responsible for any lost, stolen, or damaged personal items.</p>
-                                    <p><strong>9. Facility Availability:</strong> Equipment, classes, and services may be modified, unavailable, or withdrawn at any time without prior notice.</p>
-                                    <p><strong>10. Non-Transferability:</strong> Memberships are strictly non-transferable.</p>
-                                    <p><strong>11. Changes to Terms:</strong> The gym reserves the right to update these terms at any time. Continued use of the gym indicates acceptance of the current terms.</p>
+                                <hr>
+                                <div class="mb-3" id="termsContainer">
+                                    <h5>Gym Subscription – Terms and Conditions</h5>
+                                    <div class="border p-3 mb-2 rounded bg-light"
+                                        style="max-height: 150px; overflow-y: auto; font-size: 0.9em;">
+                                        <p><strong>1. Membership Activation:</strong> Membership becomes active only
+                                            after full or agreed payment is received. Access is limited to the
+                                            subscription period purchased.</p>
+                                        <p><strong>2. Payment Terms:</strong> All fees must be paid in advance unless
+                                            otherwise agreed in writing. Failure to make payments may result in
+                                            immediate suspension or termination of membership.</p>
+                                        <p><strong>3. No Refund Policy:</strong> All payments are final and
+                                            non-refundable unless required by applicable law.</p>
+                                        <p><strong>4. Cancellation Policy:</strong> Cancellation requests must be
+                                            submitted in writing. Any agreed notice period must be completed before
+                                            cancellation takes effect.</p>
+                                        <p><strong>5. Health Responsibility:</strong> Members confirm that they are
+                                            physically and medically fit to participate in exercise. It is the member’s
+                                            responsibility to consult a medical professional before engaging in any
+                                            fitness activities.</p>
+                                        <p><strong>6. Injury and Health Liability Waiver:</strong> The gym, its owners,
+                                            staff, and affiliates are not responsible or liable for:</p>
+                                        <ul>
+                                            <li>Any injuries sustained while using the facilities or equipment</li>
+                                            <li>Any accidents occurring on the premises</li>
+                                            <li>Any health conditions arising during or after workouts</li>
+                                            <li>Serious medical events, including but not limited to heart attacks,
+                                                strokes, or other medical emergencies</li>
+                                        </ul>
+                                        <p>By using the gym, members accept all risks associated with physical exercise
+                                            and waive any claims against the gym to the fullest extent permitted by law.
+                                        </p>
+                                        <p><strong>7. Use of Equipment and Facilities:</strong> Members must use
+                                            equipment responsibly and follow all instructions provided by staff. Unsafe
+                                            or inappropriate behavior may result in termination of membership without
+                                            refund.</p>
+                                        <p><strong>8. Personal Belongings:</strong> The gym is not responsible for any
+                                            lost, stolen, or damaged personal items.</p>
+                                        <p><strong>9. Facility Availability:</strong> Equipment, classes, and services
+                                            may be modified, unavailable, or withdrawn at any time without prior notice.
+                                        </p>
+                                        <p><strong>10. Non-Transferability:</strong> Memberships are strictly
+                                            non-transferable.</p>
+                                        <p><strong>11. Changes to Terms:</strong> The gym reserves the right to update
+                                            these terms at any time. Continued use of the gym indicates acceptance of
+                                            the current terms.</p>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="termsAccepted"
+                                            name="terms_accepted" required>
+                                        <label class="form-check-label fw-bold" for="termsAccepted">
+                                            By completing this purchase, you acknowledge that you have read, understood,
+                                            and agreed to these Terms and Conditions.
+                                        </label>
+                                    </div>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="termsAccepted" name="terms_accepted" required>
-                                    <label class="form-check-label fw-bold" for="termsAccepted">
-                                        By completing this purchase, you acknowledge that you have read, understood, and agreed to these Terms and Conditions.
-                                    </label>
+
+                                <div class="d-flex flex-wrap gap-2 mt-4">
+                                    <button type="button" id="submitBtn"
+                                        class="btn btn-primary w-100 w-sm-auto">Register Member</button>
+                                    <button type="button" id="cancelEditBtn"
+                                        class="btn btn-secondary d-none w-100 w-sm-auto" onclick="resetForm()">Cancel
+                                        Edit</button>
                                 </div>
-                            </div>
-
-                            <div class="d-flex flex-wrap gap-2 mt-4">
-                                <button type="button" id="submitBtn" class="btn btn-primary w-100 w-sm-auto" >Register Member</button>
-                                <button type="button" id="cancelEditBtn" class="btn btn-secondary d-none w-100 w-sm-auto" onclick="resetForm()">Cancel Edit</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Member List (Admin Only) -->
-            {% if current_user.role == 'admin' %}
-            <div id="members" class="section">
-                <h2>Member List</h2>
-                <div class="row mb-3 mt-3 g-2 align-items-center">
-                    <div class="col-md-6 col-12">
-                        <label for="mobileSearch" class="visually-hidden">Search by Mobile Number</label>
-                        <input type="text" id="mobileSearch" class="form-control" placeholder="Search by Mobile Number..." onkeyup="searchByMobile()">
-                    </div>
-                    <div class="col-md-6 col-12 d-flex justify-content-md-end">
-                        <nav class="btn-group" aria-label="Status filter">
-                            <input type="radio" class="btn-check" name="statusFilter" id="filterAll" value="" autocomplete="off" checked onchange="applyMemberFilter()">
-                            <label class="btn btn-outline-primary" for="filterAll">All</label>
-
-                            <input type="radio" class="btn-check" name="statusFilter" id="filterActive" value="active" autocomplete="off" onchange="applyMemberFilter()">
-                            <label class="btn btn-outline-success" for="filterActive">Active</label>
-
-                            <input type="radio" class="btn-check" name="statusFilter" id="filterExpired" value="expired" autocomplete="off" onchange="applyMemberFilter()">
-                            <label class="btn btn-outline-secondary" for="filterExpired">Inactive</label>
-                        </nav>
-                    </div>
-                </div>
-                <div class="card mt-4 shadow-sm">
-                    <div class="card-body" style="overflow-x: auto;">
-                        <table class="table table-striped" id="membersTable">
-                            <thead>
-                                <tr>
-                                    <th>Photo</th>
-                                    <th>Mobile Number</th>
-                                    <th>First Name</th>
-                                    <th>Last Name</th>
-                                    <th>Subscription</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for member in members %}
-                                <tr>
-                                    <td>
-                                        {% if member.photo %}
-                                            <img src="{{ member.photo }}?_={{ range(1, 100000) | random }}" alt="Member" class="member-thumbnail">
-                                        {% else %}
-                                            <div class="member-thumbnail bg-secondary d-flex justify-content-center align-items-center text-white">N/A</div>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ member.mobile_number }}</td>
-                                    <td>{{ member.first_name }}</td>
-                                    <td>{{ member.last_name }}</td>
-                                    <td>{{ member.subscription }}</td>
-                                    <td class="status-cell" data-status="{{ member.status }}">
-                                        {% if member.status == 'active' %}
-                                            <span class="badge bg-success">Active</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ member.status | default('Unknown') }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-info" onclick="viewMember('{{ member.mobile_number }}')">View</button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- View Member Detail -->
-            <div id="viewMemberDetails" class="section {% if current_user.role == 'member' %}active{% endif %}">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                    <h2>Member Details</h2>
-                    <div>
-                        <button id="editMemberBtn" class="btn btn-primary me-2">Edit</button>
-                        {% if current_user.role == 'admin' %}
-                        <button class="btn btn-secondary" onclick="showSection('members', event)">Back</button>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="table-responsive">
-                                    <table class="table table-borderless">
-                                        <tbody>
-                                            <tr>
-                                                <th>First Name:</th>
-                                                <td id="viewFirstName"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Last Name:</th>
-                                                <td id="viewLastName"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Mobile Number:</th>
-                                                <td id="viewMobileNumber"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Email Address:</th>
-                                                <td id="viewEmail"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Gender:</th>
-                                                <td id="viewGender"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Address:</th>
-                                                <td id="viewAddress"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Date of Birth:</th>
-                                                <td id="viewDob"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Joining Date:</th>
-                                                <td id="viewJoiningDate"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Subscription:</th>
-                                                <td id="viewSubscription"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Subscription Start:</th>
-                                                <td id="viewSubscriptionStart"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Subscription End:</th>
-                                                <td id="viewSubscriptionEnd"></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Status:</th>
-                                                <td><span id="viewStatusBadge" class="badge"></span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-center mb-3 mb-md-0">
-                                <img id="viewPhoto" src="" alt="Member" class="view-photo d-none">
-                                <div id="noPhoto" class="view-photo bg-secondary text-white d-flex justify-content-center align-items-center mx-auto d-none">
-                                    No Photo
-                                </div>
-                            </div>
+                            </form>
                         </div>
-                        <hr>
-                        <h4>Update Vitals</h4>
-                        <form id="vitalsForm" onsubmit="updateVitals(event)">
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label for="vitalHeight" class="form-label">Height (cm)</label>
-                                    <input type="number" step="0.1" class="form-control" id="vitalHeight" required oninput="calculateBMI()">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="vitalWeight" class="form-label">Weight (kg)</label>
-                                    <input type="number" step="0.1" class="form-control" id="vitalWeight" required oninput="calculateBMI()">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="vitalBmi" class="form-label">BMI</label>
-                                    <input type="text" class="form-control" id="vitalBmi" readonly>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-success">Update Vitals</button>
-                        </form>
+                    </div>
+                </div>
 
-                        {% if current_user.role == 'admin' %}
-                        <hr>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h4>Renew Subscription</h4>
-                            <button type="button" class="btn btn-sm btn-outline-info" onclick="viewMemberTransactions()">View Transactions</button>
+                <!-- Member List (Admin Only) -->
+                {% if current_user.role == 'admin' %}
+                <div id="members" class="section">
+                    <h2>Member List</h2>
+                    <div class="row mb-3 mt-3 g-2 align-items-center">
+                        <div class="col-md-6 col-12">
+                            <label for="mobileSearch" class="visually-hidden">Search by Mobile Number</label>
+                            <input type="text" id="mobileSearch" class="form-control"
+                                placeholder="Search by Mobile Number..." onkeyup="searchByMobile()">
                         </div>
-                        <form id="renewSubscriptionForm" onsubmit="renewSubscription(event)">
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label for="renewSubscriptionPlan" class="form-label">Membership Plan</label>
-                                    <select class="form-select" id="renewSubscriptionPlan" name="subscription" required onchange="calculateRenewEndDate()">
-                                        <option value="1 Month">1 Month</option>
-                                        <option value="3 Months">3 Months</option>
-                                        <option value="6 Months">6 Months</option>
-                                        <option value="12 Months">12 Months</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="renewSubscriptionStartDate" class="form-label">Start Date</label>
-                                    <input type="date" class="form-control" id="renewSubscriptionStartDate" required onchange="calculateRenewEndDate()">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="renewSubscriptionEndDate" class="form-label">End Date</label>
-                                    <input type="date" class="form-control" id="renewSubscriptionEndDate" required>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label for="renewAmount" class="form-label">Amount</label>
-                                    <input type="text" class="form-control" id="renewAmount" name="amount" placeholder="e.g. 50" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="renewDiscount" class="form-label">Discount</label>
-                                    <input type="text" class="form-control" id="renewDiscount" name="discount" placeholder="e.g. 10 or 10%">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="renewPaymentMethod" class="form-label">Payment Method</label>
-                                    <select class="form-select" id="renewPaymentMethod" name="payment_method" required>
-                                        <option value="Credit Card">Credit Card</option>
-                                        <option value="Cash">Cash</option>
-                                        <option value="UPI">UPI</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Renew Subscription</button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+                        <div class="col-md-6 col-12 d-flex justify-content-md-end">
+                            <nav class="btn-group" aria-label="Status filter">
+                                <input type="radio" class="btn-check" name="statusFilter" id="filterAll" value=""
+                                    autocomplete="off" checked onchange="applyMemberFilter()">
+                                <label class="btn btn-outline-primary" for="filterAll">All</label>
 
-            <!-- Transactions -->
-            <div id="transactions" class="section">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2>Transaction Details</h2>
-                </div>
+                                <input type="radio" class="btn-check" name="statusFilter" id="filterActive"
+                                    value="active" autocomplete="off" onchange="applyMemberFilter()">
+                                <label class="btn btn-outline-success" for="filterActive">Active</label>
 
-                <!-- Filters for Transactions -->
-                <div class="row mb-3 mt-3 g-2 align-items-end">
-                    {% if current_user.role == 'admin' %}
-                    <div class="col-md-4 col-12">
-                        <label for="transactionSearch" class="form-label text-muted small">Search Mobile</label>
-                        <input type="text" id="transactionSearch" class="form-control" placeholder="Mobile Number..." onkeyup="filterTransactions()">
+                                <input type="radio" class="btn-check" name="statusFilter" id="filterExpired"
+                                    value="expired" autocomplete="off" onchange="applyMemberFilter()">
+                                <label class="btn btn-outline-secondary" for="filterExpired">Inactive</label>
+                            </nav>
+                        </div>
                     </div>
-                    {% endif %}
-                    <div class="col-md-3 col-6">
-                        <label for="transactionFromDate" class="form-label text-muted small">From Date</label>
-                        <input type="date" id="transactionFromDate" class="form-control" onchange="filterTransactions()">
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <label for="transactionToDate" class="form-label text-muted small">To Date</label>
-                        <input type="date" id="transactionToDate" class="form-control" onchange="filterTransactions()">
-                    </div>
-                    <div class="col-md-2 col-12">
-                        <button class="btn btn-secondary w-100" onclick="clearTransactionFilters()">Clear Filters</button>
-                    </div>
-                </div>
-
-                <div class="card mt-4 shadow-sm">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="transactionsTable">
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-body" style="overflow-x: auto;">
+                            <table class="table table-striped" id="membersTable">
                                 <thead>
                                     <tr>
-                                        <th>Txn ID</th>
-                                        <th>Date</th>
-                                        <th>Member Name</th>
+                                        <th>Photo</th>
                                         <th>Mobile Number</th>
-                                        <th>Amount</th>
-                                        <th>Discount</th>
-                                        <th>Payment Method</th>
+                                        <th>Name</th>
+                                        <th>Subscription</th>
                                         <th>Status</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for txn in transactions %}
-                                    <tr>
-                                        <td>{{ txn.transaction_id }}</td>
-                                        <td class="txn-date-cell">{{ txn.date }}</td>
-                                        <td>{{ txn.member_name }}</td>
-                                        <td class="txn-mobile-cell">{{ txn.mobile_number }}</td>
-                                        <td>{{ txn.amount }}</td>
-                                        <td>{{ txn.discount | default('N/A') }}</td>
-                                        <td>{{ txn.payment_method }}</td>
+                                    {% for member in members %}
+                                    <tr id="member-row-{{ member.mobile_number }}"
+                                        data-mobile="{{ member.mobile_number }}">
                                         <td>
-                                            {% if txn.status == 'Completed' %}
-                                                <span class="badge bg-success">Completed</span>
-                                            {% elif txn.status == 'Pending' %}
-                                                <span class="badge bg-warning">Pending</span>
+                                            {% if member.photo %}
+                                            <img src="{{ member.photo }}?_={{ range(1, 100000) | random }}" alt="Member"
+                                                class="member-thumbnail">
                                             {% else %}
-                                                <span class="badge bg-secondary">{{ txn.status | default('Unknown') }}</span>
+                                            <div
+                                                class="member-thumbnail bg-secondary d-flex justify-content-center align-items-center text-white">
+                                                N/A</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ member.mobile_number }}</td>
+                                        <td>{{ member.first_name }}</td>
+                                        <td>{{ member.subscription }}</td>
+                                        <td class="status-cell" data-status="{{ member.status }}">
+                                            {% if member.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">{{ member.status | default('Unknown')
+                                                }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <a href="/print_receipt/{{ txn.transaction_id }}" class="btn btn-sm btn-outline-primary" target="_blank">Print</a>
+                                            <div class="d-flex gap-1">
+                                                <button type="button" class="btn btn-sm btn-info"
+                                                    onclick="viewMember('{{ member.mobile_number }}')">View</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    title="Delete member"
+                                                    onclick="openDeleteMemberModal('{{ member.mobile_number }}', '{{ member.first_name }}')">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            </div>
                                         </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="9" class="text-center">No transactions found.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -551,37 +398,324 @@
                         </div>
                     </div>
                 </div>
-            </div>
+                {% endif %}
 
-        </main>
-    </div>
-</div>
+                <!-- View Member Detail -->
+                <div id="viewMemberDetails" class="section {% if current_user.role == 'member' %}active{% endif %}">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <h2>Member Details</h2>
+                        <div>
+                            <button id="editMemberBtn" class="btn btn-primary me-2">Edit</button>
+                            {% if current_user.role == 'admin' %}
+                            <button id="deleteMemberDetailBtn" class="btn btn-outline-danger me-2"
+                                onclick="openDeleteMemberModal(currentMemberData?.mobile_number, (currentMemberData?.first_name || '') + ' ' + (currentMemberData?.last_name || ''))">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                            <button class="btn btn-secondary" onclick="showSection('members', event)">Back</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless">
+                                            <tbody>
+                                                <tr>
+                                                    <th>First Name:</th>
+                                                    <td id="viewFirstName"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Last Name:</th>
+                                                    <td id="viewLastName"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Mobile Number:</th>
+                                                    <td id="viewMobileNumber"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Email Address:</th>
+                                                    <td id="viewEmail"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Gender:</th>
+                                                    <td id="viewGender"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Address:</th>
+                                                    <td id="viewAddress"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Date of Birth:</th>
+                                                    <td id="viewDob"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Joining Date:</th>
+                                                    <td id="viewJoiningDate"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Subscription:</th>
+                                                    <td id="viewSubscription"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Subscription Start:</th>
+                                                    <td id="viewSubscriptionStart"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Subscription End:</th>
+                                                    <td id="viewSubscriptionEnd"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Status:</th>
+                                                    <td><span id="viewStatusBadge" class="badge"></span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-center mb-3 mb-md-0">
+                                    <img id="viewPhoto" src="" alt="Member" class="view-photo d-none">
+                                    <div id="noPhoto"
+                                        class="view-photo bg-secondary text-white d-flex justify-content-center align-items-center mx-auto d-none">
+                                        No Photo
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <h4>Update Vitals</h4>
+                            <form id="vitalsForm" onsubmit="updateVitals(event)">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="vitalHeight" class="form-label">Height (cm)</label>
+                                        <input type="number" step="0.1" class="form-control" id="vitalHeight" required
+                                            oninput="calculateBMI()">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="vitalWeight" class="form-label">Weight (kg)</label>
+                                        <input type="number" step="0.1" class="form-control" id="vitalWeight" required
+                                            oninput="calculateBMI()">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="vitalBmi" class="form-label">BMI</label>
+                                        <input type="text" class="form-control" id="vitalBmi" readonly>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success">Update Vitals</button>
+                            </form>
 
-<!-- Flash Messages -->
-<div class="flashes">
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            {% if current_user.role == 'admin' %}
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h4>Renew Subscription</h4>
+                                <button type="button" class="btn btn-sm btn-outline-info"
+                                    onclick="viewMemberTransactions()">View Transactions</button>
+                            </div>
+                            <form id="renewSubscriptionForm" onsubmit="renewSubscription(event)">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="renewSubscriptionPlan" class="form-label">Membership Plan</label>
+                                        <select class="form-select" id="renewSubscriptionPlan" name="subscription"
+                                            required onchange="calculateRenewEndDate()">
+                                            <option value="1 Month">1 Month</option>
+                                            <option value="3 Months">3 Months</option>
+                                            <option value="6 Months">6 Months</option>
+                                            <option value="12 Months">12 Months</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="renewSubscriptionStartDate" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="renewSubscriptionStartDate" required
+                                            onchange="calculateRenewEndDate()">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="renewSubscriptionEndDate" class="form-label">End Date</label>
+                                        <input type="date" class="form-control" id="renewSubscriptionEndDate" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="renewAmount" class="form-label">Amount</label>
+                                        <input type="text" class="form-control" id="renewAmount" name="amount"
+                                            placeholder="e.g. 50" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="renewDiscount" class="form-label">Discount</label>
+                                        <input type="text" class="form-control" id="renewDiscount" name="discount"
+                                            placeholder="e.g. 10 or 10%">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="renewPaymentMethod" class="form-label">Payment Method</label>
+                                        <select class="form-select" id="renewPaymentMethod" name="payment_method"
+                                            required>
+                                            <option value="Credit Card">Credit Card</option>
+                                            <option value="Cash">Cash</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Renew Subscription</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions -->
+                <div id="transactions" class="section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2>Transaction Details</h2>
+                    </div>
+
+                    <!-- Filters for Transactions -->
+                    <div class="row mb-3 mt-3 g-2 align-items-end">
+                        {% if current_user.role == 'admin' %}
+                        <div class="col-md-4 col-12">
+                            <label for="transactionSearch" class="form-label text-muted small">Search Mobile</label>
+                            <input type="text" id="transactionSearch" class="form-control"
+                                placeholder="Mobile Number..." onkeyup="filterTransactions()">
+                        </div>
+                        {% endif %}
+                        <div class="col-md-3 col-6">
+                            <label for="transactionFromDate" class="form-label text-muted small">From Date</label>
+                            <input type="date" id="transactionFromDate" class="form-control"
+                                onchange="filterTransactions()">
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label for="transactionToDate" class="form-label text-muted small">To Date</label>
+                            <input type="date" id="transactionToDate" class="form-control"
+                                onchange="filterTransactions()">
+                        </div>
+                        <div class="col-md-2 col-12">
+                            <button class="btn btn-secondary w-100" onclick="clearTransactionFilters()">Clear
+                                Filters</button>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="transactionsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Txn ID</th>
+                                            <th>Date</th>
+                                            <th>Member Name</th>
+                                            <th>Mobile Number</th>
+                                            <th>Amount</th>
+                                            <th>Discount</th>
+                                            <th>Payment Method</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for txn in transactions %}
+                                        <tr>
+                                            <td>{{ txn.transaction_id }}</td>
+                                            <td class="txn-date-cell">{{ txn.date }}</td>
+                                            <td>{{ txn.member_name }}</td>
+                                            <td class="txn-mobile-cell">{{ txn.mobile_number }}</td>
+                                            <td>{{ txn.amount }}</td>
+                                            <td>{{ txn.discount | default('N/A') }}</td>
+                                            <td>{{ txn.payment_method }}</td>
+                                            <td>
+                                                {% if txn.status == 'Completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                                {% elif txn.status == 'Pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ txn.status | default('Unknown')
+                                                    }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="/print_receipt/{{ txn.transaction_id }}"
+                                                    class="btn btn-sm btn-outline-primary" target="_blank">Print</a>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="9" class="text-center">No transactions found.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
         </div>
-      {% endfor %}
-  {% endif %}
-{% endwith %}
-</div>
+        <!-- Delete Member Confirmation Modal -->
+        <div class="modal fade" id="deleteMemberModal" tabindex="-1" aria-labelledby="deleteMemberModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteMemberModalLabel">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Member Deletion
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning mb-3">
+                            <strong>Warning:</strong> You are about to permanently delete member <span
+                                id="deleteModalMemberName" class="fw-bold"></span> (<code
+                                id="deleteModalMemberMobile"></code>). This will permanently delete the member and their
+                            transaction records.
+                        </div>
+                        <p class="mb-2">To prevent accidental deletion, please reverify by entering the member's mobile
+                            number or typing <strong>DELETE</strong> below:</p>
+                        <div class="mb-3">
+                            <label for="deleteReverifyInput" class="form-label text-muted small">Reverification:</label>
+                            <input type="text" class="form-control" id="deleteReverifyInput"
+                                placeholder="Enter mobile number or DELETE" autocomplete="off"
+                                oninput="checkDeleteReverify()">
+                            <div class="form-text text-muted">The confirm button will be enabled only when the input
+                                matches.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteMemberBtn" disabled
+                            onclick="executeDeleteMember()">
+                            <i class="bi bi-trash"></i> Confirm Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- App Config -->
-<script>
-    window.APP_CONFIG = {
-        currentUserRole: '{{ current_user.role }}',
-        currentUserName: '{{ current_user.username }}',
-        currentMember: {{ current_member|default(none)|tojson }}
+        <!-- Flash Messages -->
+        <div class="flashes">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- App Config -->
+        <script>
+            window.APP_CONFIG = {
+                currentUserRole: '{{ current_user.role }}',
+                currentUserName: '{{ current_user.username }}',
+                currentMember: {{ current_member |default (none) | tojson }}
     };
-</script>
-<!-- Custom JS -->
-<script src="{{ url_for('fit_mafia.static', filename='home.js') }}"></script>
+        </script>
+        <!-- Custom JS -->
+        <script src="{{ url_for('fit_mafia.static', filename='home.js') }}"></script>
 </body>
+
 </html>

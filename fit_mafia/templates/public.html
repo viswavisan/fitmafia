@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,31 +10,33 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('fit_mafia.static', filename='public.css') }}">
 
 </head>
+
 <body>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flashes">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          {% endfor %}
+    {% if messages %}
+    <div class="flashes">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-      {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
     {% endwith %}
 
     <!-- Navigation -->
     <nav class="navbar navbar-expand-xl navbar-dark fixed-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="#">
-                <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Fit Mafia Logo" class="me-2">
+                <img src="{{ url_for('fit_mafia.static', filename='logo.png') }}" alt="Fit Mafia Logo" class="me-2">
                 <span class="fw-bold fs-4">FIT MAFIA</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -48,12 +51,15 @@
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                 </ul>
 
-                <form class="d-flex align-items-center mt-3 mt-xl-0 flex-column flex-xl-row gap-2" action="/login" method="POST">
+                <form class="d-flex align-items-center mt-3 mt-xl-0 flex-column flex-xl-row gap-2" action="/login"
+                    method="POST">
                     {% if error %}
-                        <small class="text-danger fw-bold me-2">{{ error }}</small>
+                    <small class="text-danger fw-bold me-2">{{ error }}</small>
                     {% endif %}
-                    <input type="text" class="login-input" name="username" placeholder="Mobile" aria-label="Mobile" required>
-                    <input type="password" class="login-input" name="password" placeholder="Password" aria-label="Password" required>
+                    <input type="text" class="login-input" name="username" placeholder="Mobile" aria-label="Mobile"
+                        required>
+                    <input type="password" class="login-input" name="password" placeholder="Password"
+                        aria-label="Password" required>
                     <button class="btn btn-login btn-sm px-4 py-2" type="submit">Login</button>
                 </form>
             </div>
@@ -64,7 +70,10 @@
     <section id="home" class="hero">
         <div class="container">
             <h1>Welcome to <span>Fit Mafia</span></h1>
-            <p>Join the elite. Train hard. Achieve your goals. Welcome to the family.</p>
+            <p>Fit Mafia® is more than a gym — it’s a movement. Built for both men and women,
+                the brand empowers individuals to take control of their fitness journey, build strength,
+                and become the best version of themselves. Fit Mafia is not just about fitness — it’s about building a
+                mindset, a lifestyle, and a powerful community that stands together and grows stronger every day</p>
             <a href="#memberships" class="btn btn-hero">Join Now</a>
         </div>
     </section>
@@ -75,15 +84,20 @@
             <h2 class="section-title">About Our Gym</h2>
             <div class="row align-items-center mt-5">
                 <div class="col-lg-6 mb-4 mb-lg-0">
-                    <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1470&auto=format&fit=crop" alt="Gym Interior" class="about-img">
+                    <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1470&auto=format&fit=crop"
+                        alt="Gym Interior" class="about-img">
                 </div>
                 <div class="col-lg-6 px-lg-5">
-                    <h3 class="fw-bold mb-4">More Than Just a Gym, It's a <span class="text-accent">Lifestyle</span></h3>
+                    <h3 class="fw-bold mb-4">More Than Just a Gym, It's a <span class="text-accent">Lifestyle</span>
+                    </h3>
                     <p class="text-muted" style="line-height: 1.8;">
-                        Fit Mafia is the premier fitness destination designed for those who are serious about their goals. We provide state-of-the-art equipment, expert trainers, and a community atmosphere that pushes you to be your best self.
+                        Fit Mafia is the premier fitness destination designed for those who are serious about their
+                        goals. We provide state-of-the-art equipment, expert trainers, and a community atmosphere that
+                        pushes you to be your best self.
                     </p>
                     <p class="text-muted" style="line-height: 1.8;">
-                        Whether you are a beginner taking your first steps or a seasoned athlete looking to break plateaus, we have the tools, the space, and the vibe you need to succeed.
+                        Whether you are a beginner taking your first steps or a seasoned athlete looking to break
+                        plateaus, we have the tools, the space, and the vibe you need to succeed.
                     </p>
                     <div class="row mt-4">
                         <div class="col-sm-6 mb-3">
@@ -145,7 +159,8 @@
                             <li>Locker Room Access</li>
                             <li>Standard Support</li>
                         </ul>
-                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%201%20Month%20Membership%20Plan%20at%20Fit%20Mafia." target="_blank" class="btn btn-outline-whatsapp w-100">
+                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%201%20Month%20Membership%20Plan%20at%20Fit%20Mafia."
+                            target="_blank" class="btn btn-outline-whatsapp w-100">
                             <i class="bi bi-whatsapp"></i> Enquire Now
                         </a>
                     </div>
@@ -153,8 +168,10 @@
 
                 <!-- Plan 2 -->
                 <div class="col-lg-4 col-md-6">
-                    <div class="pricing-card" style="border-color: var(--primary-color); transform: scale(1.05); z-index: 1;">
-                        <div class="badge bg-danger mb-3 position-absolute top-0 start-50 translate-middle">MOST POPULAR</div>
+                    <div class="pricing-card"
+                        style="border-color: var(--primary-color); transform: scale(1.05); z-index: 1;">
+                        <div class="badge bg-danger mb-3 position-absolute top-0 start-50 translate-middle">MOST POPULAR
+                        </div>
                         <h3>6 Months</h3>
                         <div class="price">₹7,000 <span>/6mo</span></div>
                         <ul class="pricing-features">
@@ -163,7 +180,8 @@
                             <li>Diet Plan Consultation</li>
                             <li>Locker Room Access</li>
                         </ul>
-                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%206%20Months%20Membership%20Plan%20at%20Fit%20Mafia." target="_blank" class="btn btn-whatsapp w-100">
+                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%206%20Months%20Membership%20Plan%20at%20Fit%20Mafia."
+                            target="_blank" class="btn btn-whatsapp w-100">
                             <i class="bi bi-whatsapp"></i> Enquire Now
                         </a>
                     </div>
@@ -181,7 +199,8 @@
                             <li>Free Gym Merchandise</li>
                             <li>Priority Support</li>
                         </ul>
-                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%2012%20Months%20Membership%20Plan%20at%20Fit%20Mafia." target="_blank" class="btn btn-outline-whatsapp w-100">
+                        <a href="https://wa.me/919551830381?text=Hi%2C%20I%20am%20interested%20in%20the%2012%20Months%20Membership%20Plan%20at%20Fit%20Mafia."
+                            target="_blank" class="btn btn-outline-whatsapp w-100">
                             <i class="bi bi-whatsapp"></i> Enquire Now
                         </a>
                     </div>
@@ -197,32 +216,38 @@
             <div class="row g-3 mt-4">
                 <div class="col-md-4 col-sm-6">
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1470&auto=format&fit=crop" alt="Activity 1">
+                        <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1470&auto=format&fit=crop"
+                            alt="Activity 1">
                     </div>
                 </div>
                 <div class="col-md-4 col-sm-6">
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1470&auto=format&fit=crop" alt="Activity 2">
+                        <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1470&auto=format&fit=crop"
+                            alt="Activity 2">
                     </div>
                 </div>
                 <div class="col-md-4 col-sm-6">
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1469&auto=format&fit=crop" alt="Activity 3">
+                        <img src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1469&auto=format&fit=crop"
+                            alt="Activity 3">
                     </div>
                 </div>
                 <div class="col-md-4 col-sm-6">
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1470&auto=format&fit=crop" alt="Activity 4">
+                        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1470&auto=format&fit=crop"
+                            alt="Activity 4">
                     </div>
                 </div>
                 <div class="col-md-4 col-sm-6">
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=1469&auto=format&fit=crop" alt="Activity 5">
+                        <img src="https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=1469&auto=format&fit=crop"
+                            alt="Activity 5">
                     </div>
                 </div>
                 <div class="col-md-4 col-sm-6">
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop" alt="Activity 6">
+                        <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop"
+                            alt="Activity 6">
                     </div>
                 </div>
             </div>
@@ -238,21 +263,22 @@
                     <div class="contact-card">
                         <i class="bi bi-geo-alt-fill"></i>
                         <h4>Location</h4>
-                        <p class="text-muted mb-0">Shop No.28, 91, Korattur Railway Station Rd, Venkatraman Nagar, Korattur, Chennai, Tamil Nadu 600050</p>
+                        <p>116A Pettai Main Road, Mahadevapattinam
+                            Ullikkottai 614018</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="contact-card">
                         <i class="bi bi-telephone-fill"></i>
                         <h4>Contact</h4>
-                        <p class="text-muted mb-0">Mobile: +91 9551830381</p>
+                        <p>Mobile: +91 9884449929</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="contact-card">
                         <i class="bi bi-clock-fill"></i>
                         <h4>Timing</h4>
-                        <p class="text-muted mb-0">Mon - Sat: 5:00 AM - 10:00 PM<br>Sunday: 6:00 AM - 12:00 PM</p>
+                        <p>Mon - Sat: Morning 5AM to Evening 9PM</p>
                     </div>
                 </div>
             </div>
@@ -260,14 +286,9 @@
             <div class="row mt-5">
                 <div class="col-12">
                     <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                        <iframe
-                            title="Fit Mafia Location Map"
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3885.666992383842!2d80.1852923!3d13.1198539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a526487e411b007%3A0xe5cde78a2e1d93ff!2s91%2C%20Korattur%20Railway%20Station%20Rd%2C%20Venkatraman%20Nagar%2C%20Korattur%2C%20Chennai%2C%20Tamil%20Nadu%20600050!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-                            width="100%"
-                            height="400"
-                            style="border:0;"
-                            allowfullscreen=""
-                            loading="lazy"
+                        <iframe title="Fit Mafia Location Map"
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.229123456789!2d79.4094429!3d10.5987616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3baabc123456789%3A0xabcdef123456789!2s10%C2%B035'55.5%22N+79%C2%B024'43.3%22E!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                            width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"
                             referrerpolicy="no-referrer-when-downgrade">
                         </iframe>
                     </div>
@@ -276,7 +297,8 @@
 
             <div class="row mt-5">
                 <div class="col-lg-8 mx-auto text-center">
-                    <p class="fs-5">Ready to start your journey? Visit our gym today or login to manage your membership via the navigation bar above!</p>
+                    <p class="fs-5">Ready to start your journey? Visit our gym today or login to manage your membership
+                        via the navigation bar above!</p>
                 </div>
             </div>
         </div>
@@ -285,7 +307,8 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <img src="https://mpxtvjplufxevfbtzmul.supabase.co/storage/v1/object/sign/fitmafia/logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yYzYyODY2Mi1hMmZjLTQyNjMtYTg2NS01NzJjMDVlMDI5ZWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaXRtYWZpYS9sb2dvLnBuZyIsImlhdCI6MTc3NjExNDkzMSwiZXhwIjoxODA3NjUwOTMxfQ.D_b9TD-HzWXzRMNF1dg2If6qUkIy9sPGSVVXv0926Ic" alt="Fit Mafia Logo" style="height: 40px; margin-bottom: 20px; border-radius: 4px;">
+            <img src="{{ url_for('fit_mafia.static', filename='logo.png') }}" alt="Fit Mafia Logo"
+                style="height: 40px; margin-bottom: 20px; border-radius: 4px;">
             <p class="mb-0">&copy; 2023 Fit Mafia Gym. All Rights Reserved. | Version: 26.05.21</p>
         </div>
     </footer>
@@ -294,4 +317,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
+
 </html>

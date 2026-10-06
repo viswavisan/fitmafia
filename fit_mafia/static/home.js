@@ -535,7 +535,10 @@ function editMember() {
     // Populate the form with currentMemberData
     document.getElementById('memberForm').action = '/update_member';
     document.getElementById('firstName').value = currentMemberData.first_name || '';
-    document.getElementById('lastName').value = currentMemberData.last_name || '';
+    const lastNameField = document.getElementById('lastName');
+    if (lastNameField) {
+        lastNameField.value = currentMemberData.last_name || '';
+    }
     document.getElementById('mobile_number').value = currentMemberData.mobile_number || '';
     document.getElementById('mobile_number').setAttribute('readonly', true); // Prevent PK change
     document.getElementById('email').value = currentMemberData.email || '';
@@ -580,6 +583,7 @@ function resetForm(event) {
     // Reset form fields
     document.getElementById('memberForm').reset();
     document.getElementById('memberForm').action = '/register_member';
+    document.querySelectorAll('#memberForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
 
     // Remove readonly from mobile number
     document.getElementById('mobile_number').removeAttribute('readonly');
@@ -655,21 +659,35 @@ async function handleMemberFormSubmit(event) {
     // --- Validation for new member registration ---
     if (url.endsWith('register_member')) {
         const firstNameField = document.getElementById('firstName');
-        const lastNameField = document.getElementById('lastName');
         const mobileNumberField = document.getElementById('mobile_number');
         const passwordField = document.getElementById('password');
         const genderField = document.getElementById('gender');
         const dobField = document.getElementById('dob');
+        const emailField = document.getElementById('email');
+        const addressField = document.getElementById('address');
         const termsAcceptedField = document.getElementById('termsAccepted');
 
         isValid &= validateAndHighlight(firstNameField, firstNameField.value.trim() !== '');
-        isValid &= validateAndHighlight(lastNameField, lastNameField.value.trim() !== '');
         isValid &= validateAndHighlight(mobileNumberField, /^\d{10}$/.test(mobileNumberField.value));
         isValid &= validateAndHighlight(passwordField, passwordField.value.length >= 4);
         isValid &= validateAndHighlight(genderField, genderField.value !== '');
-        isValid &= validateAndHighlight(dobField, dobField.value !== '');
         if (termsAcceptedField?.hasAttribute('required')) {
             isValid &= validateAndHighlight(termsAcceptedField, termsAcceptedField.checked);
+        }
+
+        // Optional fields: validate format only if provided, clear invalid state otherwise
+        if (emailField) {
+            if (emailField.value.trim() !== '') {
+                isValid &= validateAndHighlight(emailField, emailField.checkValidity());
+            } else {
+                emailField.classList.remove('is-invalid');
+            }
+        }
+        if (dobField) {
+            dobField.classList.remove('is-invalid');
+        }
+        if (addressField) {
+            addressField.classList.remove('is-invalid');
         }
 
         if (!isValid) {
@@ -722,6 +740,135 @@ function togglePasswordVisibility() {
     icon.classList.toggle('bi-eye-slash');
 }
 
+// --- Member Deletion with Reverification ---
+let memberToDelete = null;
+
+function openDeleteMemberModal(mobileNumber, memberName) {
+    if (!mobileNumber) return;
+
+    memberToDelete = {
+        mobileNumber: String(mobileNumber).trim(),
+        memberName: memberName ? String(memberName).trim() : String(mobileNumber).trim()
+    };
+
+    const nameEl = document.getElementById('deleteModalMemberName');
+    const mobileEl = document.getElementById('deleteModalMemberMobile');
+    const inputEl = document.getElementById('deleteReverifyInput');
+    const confirmBtn = document.getElementById('confirmDeleteMemberBtn');
+
+    if (nameEl) nameEl.textContent = memberToDelete.memberName || 'Member';
+    if (mobileEl) mobileEl.textContent = memberToDelete.mobileNumber;
+    if (inputEl) {
+        inputEl.value = '';
+        inputEl.classList.remove('is-valid', 'is-invalid');
+    }
+    if (confirmBtn) confirmBtn.disabled = true;
+
+    const modalEl = document.getElementById('deleteMemberModal');
+    if (modalEl && window.bootstrap) {
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modalInstance.show();
+        setTimeout(() => inputEl?.focus(), 400);
+    }
+}
+
+function checkDeleteReverify() {
+    if (!memberToDelete) return;
+    const inputEl = document.getElementById('deleteReverifyInput');
+    const confirmBtn = document.getElementById('confirmDeleteMemberBtn');
+    if (!inputEl || !confirmBtn) return;
+
+    const val = inputEl.value.trim();
+    const isMatched = (val === memberToDelete.mobileNumber || val.toUpperCase() === 'DELETE');
+
+    if (isMatched) {
+        inputEl.classList.add('is-valid');
+        inputEl.classList.remove('is-invalid');
+        confirmBtn.disabled = false;
+    } else {
+        inputEl.classList.remove('is-valid');
+        confirmBtn.disabled = true;
+    }
+}
+
+async function executeDeleteMember() {
+    if (!memberToDelete) return;
+    const { mobileNumber, memberName } = memberToDelete;
+
+    const inputEl = document.getElementById('deleteReverifyInput');
+    const val = inputEl ? inputEl.value.trim() : '';
+    if (val !== mobileNumber && val.toUpperCase() !== 'DELETE') {
+        showFlashMessage('Please reverify the deletion by typing the mobile number or DELETE.', 'danger');
+        return;
+    }
+
+    const modalEl = document.getElementById('deleteMemberModal');
+    if (modalEl && window.bootstrap) {
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        modalInstance?.hide();
+    }
+
+    showLoading();
+    try {
+        const response = await fetch(`/delete_member/${encodeURIComponent(mobileNumber)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            showFlashMessage(result.message || `Member ${memberName} deleted successfully.`, 'success');
+
+            // Remove table row
+            const row = document.getElementById(`member-row-${mobileNumber}`) ||
+                        document.querySelector(`tr[data-mobile="${mobileNumber}"]`);
+            if (row) {
+                const statusCell = row.querySelector('.status-cell');
+                const wasActive = statusCell && statusCell.dataset.status === 'active';
+
+                row.remove();
+
+                // Update summary dashboard card counters
+                const countCards = document.querySelectorAll('.card-text.fs-2');
+                if (countCards.length >= 3) {
+                    const totalCard = countCards[0];
+                    const activeCard = countCards[1];
+                    const inactiveCard = countCards[2];
+
+                    const total = parseInt(totalCard.textContent, 10);
+                    if (!isNaN(total) && total > 0) totalCard.textContent = total - 1;
+
+                    if (wasActive) {
+                        const active = parseInt(activeCard.textContent, 10);
+                        if (!isNaN(active) && active > 0) activeCard.textContent = active - 1;
+                    } else {
+                        const inactive = parseInt(inactiveCard.textContent, 10);
+                        if (!isNaN(inactive) && inactive > 0) inactiveCard.textContent = inactive - 1;
+                    }
+                }
+            }
+
+            // Return to member list if currently viewing deleted member
+            const currentActive = document.querySelector('.section.active');
+            if (currentActive?.id === 'viewMemberDetails' && currentMemberData?.mobile_number === mobileNumber) {
+                currentMemberData = null;
+                showSection('members');
+            }
+        } else {
+            showFlashMessage(result.message || 'Failed to delete member.', 'danger');
+        }
+    } catch (error) {
+        console.error('Error deleting member:', error);
+        showFlashMessage('An error occurred while deleting member.', 'danger');
+    } finally {
+        hideLoading();
+        memberToDelete = null;
+    }
+}
+
+
 //on load function
 document.addEventListener('DOMContentLoaded', () => {
     const togglePassword = document.getElementById('togglePassword');
@@ -744,5 +891,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('submitBtn').addEventListener('click', handleMemberFormSubmit);
+
+    const deleteReverifyInput = document.getElementById('deleteReverifyInput');
+    if (deleteReverifyInput) {
+        deleteReverifyInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const confirmBtn = document.getElementById('confirmDeleteMemberBtn');
+                if (confirmBtn && !confirmBtn.disabled) {
+                    executeDeleteMember();
+                }
+            }
+        });
+    }
+
     autoCloseFlashes();
 });

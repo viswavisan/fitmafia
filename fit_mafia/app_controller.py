@@ -228,6 +228,31 @@ def update_member(_, request, file):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
+def delete_member(session, mobile_number):
+    if session.get('role') != 'admin':
+        return {'status': 'error', 'message': 'Unauthorized', 'code': 403}
+
+    if not (mobile_number and str(mobile_number).strip()):
+        return {'status': 'error', 'message': 'Mobile number is required', 'code': 400}
+
+    mobile_number = str(mobile_number).strip()
+
+    try:
+        member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
+        if not member:
+            return {'status': 'failure', 'message': MEMBER_NOT_FOUND, 'code': 404}
+
+        db.session.query(Transaction).filter_by(mobile_number=mobile_number).delete()
+        db.session.delete(member)
+        db.session.commit()
+        return {'status': 'success', 'message': f'Member {mobile_number} deleted successfully.', 'code': 200}
+
+    except Exception as e:
+        db.session.rollback()
+        logging.exception(f"Error deleting member {mobile_number}: {e}")
+        return {'status': 'error', 'message': INTERNAL_SERVER_ERROR, 'code': 500}
+
+
 def update_vitals(session,request):
     if session.get('role') != 'admin':
         return {'status':'error','message':'Unauthorized','code':403}
@@ -273,7 +298,7 @@ def renew_subscription(session,request):
         member.subscription_end_date = request.get('subscription_end_date') or calculate_end_date(
             subscription_start_date, subscription)
 
-        amount = request.form.get('amount')
+        amount = request.get('amount')
         payment_method = request.get('payment_method')
         if amount and payment_method:
             # create_transaction(member, amount, request.get('discount'), payment_method)

@@ -135,3 +135,13 @@ def update_vitals():
 def renew_subscription():
     response=app_controller.renew_subscription(session,request.form.to_dict())
     return jsonify({response['status']: response['message']}), response['code']
+
+@app.route('/delete_member', methods=['POST'])
+@app.route('/delete_member/<mobile_number>', methods=['POST', 'DELETE'])
+def delete_member(mobile_number=None):
+    if not mobile_number:
+        data = request.get_json(silent=True) or request.form.to_dict()
+        mobile_number = data.get('mobile_number')
+    response = app_controller.delete_member(session, mobile_number)
+    return jsonify({'status': response['status'], 'message': response['message']}), response.get('code', 200)
+
