@@ -347,6 +347,16 @@ function populateMemberView(data) {
     document.getElementById('viewFirstName').innerText = data.first_name || 'N/A';
     document.getElementById('viewLastName').innerText = data.last_name || 'N/A';
     document.getElementById('viewMobileNumber').innerText = data.mobile_number || 'N/A';
+    const passwordEl = document.getElementById('viewPassword');
+    if (passwordEl) {
+        passwordEl.innerText = data.password || 'N/A';
+        passwordEl.dataset.actualPassword = data.password || '';
+        passwordEl.dataset.masked = 'false';
+        const icon = document.getElementById('viewPasswordIcon');
+        if (icon) {
+            icon.className = 'bi bi-eye-slash';
+        }
+    }
     document.getElementById('viewEmail').innerText = data.email || 'N/A';
     document.getElementById('viewGender').innerText = data.gender || 'N/A';
     document.getElementById('viewAddress').innerText = data.address || 'N/A';
@@ -738,6 +748,29 @@ function togglePasswordVisibility() {
     password.setAttribute('type', type);
     icon.classList.toggle('bi-eye');
     icon.classList.toggle('bi-eye-slash');
+}
+
+function toggleViewPassword() {
+    const passwordEl = document.getElementById('viewPassword');
+    const icon = document.getElementById('viewPasswordIcon');
+    if (!passwordEl) return;
+    const actual = passwordEl.dataset.actualPassword || '';
+    if (!actual || actual === 'N/A') return;
+    if (passwordEl.dataset.masked === 'true') {
+        passwordEl.innerText = actual;
+        passwordEl.dataset.masked = 'false';
+        if (icon) {
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        }
+    } else {
+        passwordEl.innerText = '••••••••';
+        passwordEl.dataset.masked = 'true';
+        if (icon) {
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        }
+    }
 }
 
 // --- Member Deletion with Reverification ---

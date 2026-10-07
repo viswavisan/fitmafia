@@ -62,8 +62,8 @@ class Member(Base):
         )
 
     def to_dict(self):
-        """Return a dictionary representation of the model, excluding the password."""
-        column_dict = {c.key: getattr(self, c.key) for c in class_mapper(self.__class__).columns if c.key != 'password'}
+        """Return a dictionary representation of the model."""
+        column_dict = {c.key: getattr(self, c.key) for c in class_mapper(self.__class__).columns}
         column_dict['status'] = self.status # Manually add the hybrid property
         return column_dict
 

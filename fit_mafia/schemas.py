@@ -6,6 +6,7 @@ class MemberSchema(Schema):
     mobile_number = fields.Str(required=True)
     first_name = fields.Str()
     last_name = fields.Str()
+    password = fields.Str()
     email = fields.Email()
     dob = fields.Str()
     gender = fields.Str()
