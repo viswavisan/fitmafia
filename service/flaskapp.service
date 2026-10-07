@@ -1,0 +1,14 @@
+[Unit]
+Description=Flask Application
+After=network.target
+
+[Service]
+User=opc
+WorkingDirectory=/home/opc/fitmafia
+ExecStart=/usr/bin/python3 /home/opc/fitmafia/main.py
+Restart=always
+Environment="PATH=/usr/bin"
+Environment="DATABASE_URL=postgresql://postgres.mpxtvjplufxevfbtzmul:Anjpv3507h!@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres"
+
+[Install]
+WantedBy=multi-user.target

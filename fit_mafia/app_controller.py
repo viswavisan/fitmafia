@@ -107,13 +107,17 @@ def logout(session):
     session.clear()
 
 
+def generate_transaction_id():
+    return f"TXN{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+
 def register_transaction(session,request):
     if session.get('role') != 'admin':
         return {'status': 'error', 'message': 'An error occurred while registering transaction.'}
 
     try:
         new_txn = Transaction(
-            transaction_id=request.get('transaction_id') or f"TXN{str(uuid.uuid4())[:8].upper()}",
+            transaction_id=request.get('transaction_id') or generate_transaction_id(),
             member_name=request.get('member_name'),
             mobile_number=request.get('mobile_number'),
             date=request.get('date'),
@@ -303,7 +307,7 @@ def renew_subscription(session,request):
         if amount and payment_method:
             # create_transaction(member, amount, request.get('discount'), payment_method)
             new_txn = Transaction(
-                transaction_id=f"{member.first_name or ''} {member.last_name or ''}".strip() or member.mobile_number,
+                transaction_id=request.get('transaction_id') or generate_transaction_id(),
                 member_name=f"{member.first_name or ''} {member.last_name or ''}".strip() or member.mobile_number,
                 mobile_number=member.mobile_number,
                 date=datetime.date.today().isoformat(),

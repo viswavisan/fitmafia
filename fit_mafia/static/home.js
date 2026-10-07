@@ -388,7 +388,7 @@ function populateMemberView(data) {
         calculateRenewEndDate();
 
         // clear out the amount field for a fresh renewal
-        document.getElementById('renewAmount').value = '';
+        document.getElementById('renewAmount').value = '0';
         document.getElementById('renewDiscount').value = '';
         document.getElementById('renewPaymentMethod').value = 'Credit Card';
     }

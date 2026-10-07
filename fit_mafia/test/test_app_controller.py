@@ -659,6 +659,7 @@ def test_renew_subscription_success(mock_db_session):
         mock_db_session.add.assert_called_once()
         added_object = mock_db_session.add.call_args[0][0]
         assert isinstance(added_object, Transaction)
+        assert added_object.transaction_id.startswith('TXN')
         assert added_object.amount == '1000'
         assert added_object.payment_method == 'Cash'
 
