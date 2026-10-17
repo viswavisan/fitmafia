@@ -14,6 +14,10 @@ Base = declarative_base()
 class Database:
     def __init__(self, db_url):
         kwargs = {}
+        if db_url and not any(db_url.startswith(scheme) for scheme in ("sqlite", "postgres", "postgresql", "oracle", "mysql")):
+            normalized_path = db_url.replace("\\", "/")
+            db_url = f"sqlite:///{normalized_path}"
+
         self.is_oracle = db_url and db_url.startswith("oracle")
         if self.is_oracle:
             default_wallet_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'wallet')
@@ -30,9 +34,12 @@ class Database:
             kwargs["connect_args"] = {"check_same_thread": False}
             raw_path = db_url.replace("sqlite:///", "")
             if raw_path:
-                parent_dir = os.path.dirname(raw_path)
-                if parent_dir:
-                    os.makedirs(parent_dir, exist_ok=True)
+                try:
+                    parent_dir = os.path.dirname(raw_path)
+                    if parent_dir:
+                        os.makedirs(parent_dir, exist_ok=True)
+                except Exception:
+                    pass
 
         self.engine = create_engine(db_url, **kwargs)
         self.session = scoped_session(sessionmaker(bind=self.engine))
