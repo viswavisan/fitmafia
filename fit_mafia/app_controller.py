@@ -1,12 +1,30 @@
 import datetime
 import logging
+import os
 import uuid
 
+import config
 from dateutil.relativedelta import relativedelta
+from sqlalchemy import func
 
 from fit_mafia.constants import MEMBER_NOT_FOUND,INTERNAL_SERVER_ERROR
 from fit_mafia.models import Member, Session, Transaction, db
 from object_storage import ObjectStorageManager
+
+
+def get_configured_rows_limit() -> int:
+    """Reads configurable row limit from properties.ini [app] show_rows_limit with fallback."""
+    try:
+        val = (
+            config.get_property('app', 'show_rows_limit')
+            or config.get_property('app', 'pagination_limit')
+            or os.getenv('SHOW_ROWS_LIMIT')
+            or os.getenv('PAGINATION_LIMIT')
+            or '100'
+        )
+        return max(1, int(val))
+    except Exception:
+        return 100
 
 
 def login(username,password):
@@ -49,7 +67,10 @@ def login(username,password):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-def home(session):
+def home(session, request_args=None):
+    if request_args is None:
+        request_args = {}
+
     role = session.get('role', 'member')
     username = session.get('username')
     is_demo = session.get('is_demo', False)
@@ -60,18 +81,82 @@ def home(session):
         "is_demo": is_demo
     }
 
+    default_limit = get_configured_rows_limit()
+
+    try:
+        member_page = max(1, int(request_args.get('member_page', 1)))
+    except (ValueError, TypeError):
+        member_page = 1
+
+    try:
+        member_limit = max(1, int(request_args.get('member_limit', default_limit)))
+    except (ValueError, TypeError):
+        member_limit = default_limit
+
+    try:
+        txn_page = max(1, int(request_args.get('txn_page', 1)))
+    except (ValueError, TypeError):
+        txn_page = 1
+
+    try:
+        txn_limit = max(1, int(request_args.get('txn_limit', default_limit)))
+    except (ValueError, TypeError):
+        txn_limit = default_limit
+
     try:
         if role == 'admin':
-            all_members = db.session.query(Member).all()
-            total_members = len(all_members)
-            active_members = sum(1 for m in all_members if m.status == 'active')
+            member_offset = (member_page - 1) * member_limit
+            all_members = db.session.query(Member).order_by(
+                func.lower(func.trim(Member.first_name)).asc()
+            ).limit(member_limit).offset(member_offset).all()
+
+            try:
+                total_members = int(db.session.query(Member).count())
+            except (TypeError, ValueError):
+                total_members = len(all_members) if isinstance(all_members, list) else 0
+
+            try:
+                today_str = datetime.date.today().isoformat()
+                active_members = int(db.session.query(Member).filter(
+                    Member.subscription_end_date.isnot(None),
+                    Member.subscription_end_date >= today_str
+                ).count())
+            except Exception:
+                active_members = sum(1 for m in all_members if getattr(m, 'status', None) == 'active')
+
+            txn_offset = (txn_page - 1) * txn_limit
+            transactions = db.session.query(Transaction).order_by(
+                Transaction.date.desc(), Transaction.transaction_id.desc()
+            ).limit(txn_limit).offset(txn_offset).all()
+
+            try:
+                total_transactions = int(db.session.query(Transaction).count())
+            except (TypeError, ValueError):
+                total_transactions = len(transactions) if isinstance(transactions, list) else 0
+
             template_data = {
                 'current_user': current_user,
                 'members': all_members,
-                'transactions': db.session.query(Transaction).all(),
+                'transactions': transactions,
                 'total_members': total_members,
                 'active_members': active_members,
-                'inactive_members': total_members - active_members
+                'inactive_members': max(0, total_members - active_members),
+                'member_pagination': {
+                    'page': member_page,
+                    'limit': member_limit,
+                    'total': total_members,
+                    'total_pages': max(1, (total_members + member_limit - 1) // member_limit),
+                    'has_next': member_page * member_limit < total_members,
+                    'has_prev': member_page > 1
+                },
+                'transaction_pagination': {
+                    'page': txn_page,
+                    'limit': txn_limit,
+                    'total': total_transactions,
+                    'total_pages': max(1, (total_transactions + txn_limit - 1) // txn_limit),
+                    'has_next': txn_page * txn_limit < total_transactions,
+                    'has_prev': txn_page > 1
+                }
             }
         else:
             member = db.session.query(Member).filter_by(mobile_number=username).first()
@@ -85,13 +170,35 @@ def home(session):
             session['display_name'] = display_name
             current_user['display_name'] = display_name
 
+            member_txn_query = db.session.query(Transaction).filter_by(mobile_number=username)
+            try:
+                total_member_txns = int(member_txn_query.count())
+            except (TypeError, ValueError):
+                total_member_txns = 0
+
+            txn_offset = (txn_page - 1) * txn_limit
+            transactions = member_txn_query.order_by(
+                Transaction.date.desc(), Transaction.transaction_id.desc()
+            ).limit(txn_limit).offset(txn_offset).all()
+
+            if total_member_txns == 0 and isinstance(transactions, list):
+                total_member_txns = len(transactions)
+
             template_data = {
                 'current_user': current_user,
                 'current_member': member.to_dict(),
-                'transactions': db.session.query(Transaction).filter_by(mobile_number=username).all(),
+                'transactions': transactions,
                 'total_members': 1,
                 'active_members': 1 if member.status == 'active' else 0,
                 'inactive_members': 1 if member.status != 'active' else 0,
+                'transaction_pagination': {
+                    'page': txn_page,
+                    'limit': txn_limit,
+                    'total': total_member_txns,
+                    'total_pages': max(1, (total_member_txns + txn_limit - 1) // txn_limit),
+                    'has_next': txn_page * txn_limit < total_member_txns,
+                    'has_prev': txn_page > 1
+                }
             }
 
         return {'status': 'success', 'template_data': template_data}

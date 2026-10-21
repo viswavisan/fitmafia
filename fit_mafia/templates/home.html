@@ -369,7 +369,9 @@
                                     <tr>
                                         <th>Photo</th>
                                         <th>Mobile Number</th>
-                                        <th>Name</th>
+                                        <th onclick="toggleMemberNameSort()" style="cursor: pointer; user-select: none;" title="Click to toggle Name sort order">
+                                            Name <i id="memberNameSortIcon" class="bi bi-sort-alpha-down ms-1"></i>
+                                        </th>
                                         <th>Subscription</th>
                                         <th>Status</th>
                                         <th>Action</th>
@@ -415,6 +417,49 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <!-- Members Pagination -->
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2 border-top pt-3" id="membersPaginationContainer">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="membersPageSize" class="text-muted small mb-0">Show:</label>
+                                <select id="membersPageSize" class="form-select form-select-sm w-auto" onchange="window.location.href='/home?section=members&member_limit=' + this.value + '&member_page=1'">
+                                    {% if member_pagination and member_pagination.limit not in [25, 50, 100, 200] %}
+                                    <option value="{{ member_pagination.limit }}" selected>{{ member_pagination.limit }}</option>
+                                    {% endif %}
+                                    <option value="25" {% if member_pagination and member_pagination.limit == 25 %}selected{% endif %}>25</option>
+                                    <option value="50" {% if member_pagination and member_pagination.limit == 50 %}selected{% endif %}>50</option>
+                                    <option value="100" {% if member_pagination and member_pagination.limit == 100 %}selected{% endif %}>100</option>
+                                    <option value="200" {% if member_pagination and member_pagination.limit == 200 %}selected{% endif %}>200</option>
+                                </select>
+                                <span class="text-muted small">
+                                    {% if member_pagination and member_pagination.total > 0 %}
+                                    Showing {{ ((member_pagination.page - 1) * member_pagination.limit) + 1 }} to {{ [member_pagination.page * member_pagination.limit, member_pagination.total]|min }} of {{ member_pagination.total }} members
+                                    {% else %}
+                                    Showing 0 members
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% if member_pagination and member_pagination.total_pages > 1 %}
+                            <nav aria-label="Members pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item {% if not member_pagination.has_prev %}disabled{% endif %}">
+                                        <a class="page-link" href="/home?section=members&member_page={{ member_pagination.page - 1 }}&member_limit={{ member_pagination.limit }}" aria-label="Previous">&laquo; Prev</a>
+                                    </li>
+                                    {% for p in range(1, member_pagination.total_pages + 1) %}
+                                    {% if p == member_pagination.page or (p >= member_pagination.page - 2 and p <= member_pagination.page + 2) or p == 1 or p == member_pagination.total_pages %}
+                                    <li class="page-item {% if p == member_pagination.page %}active{% endif %}">
+                                        <a class="page-link" href="/home?section=members&member_page={{ p }}&member_limit={{ member_pagination.limit }}">{{ p }}</a>
+                                    </li>
+                                    {% elif p == member_pagination.page - 3 or p == member_pagination.page + 3 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    {% endif %}
+                                    {% endfor %}
+                                    <li class="page-item {% if not member_pagination.has_next %}disabled{% endif %}">
+                                        <a class="page-link" href="/home?section=members&member_page={{ member_pagination.page + 1 }}&member_limit={{ member_pagination.limit }}" aria-label="Next">Next &raquo;</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -628,7 +673,9 @@
                                     <thead>
                                         <tr>
                                             <th>Txn ID</th>
-                                            <th>Date</th>
+                                            <th onclick="toggleTransactionDateSort()" style="cursor: pointer; user-select: none;" title="Click to toggle date sort order">
+                                                Date <i id="txnDateSortIcon" class="bi bi-sort-down ms-1"></i>
+                                            </th>
                                             <th>Member Name</th>
                                             <th>Mobile Number</th>
                                             <th>Amount</th>
@@ -670,6 +717,49 @@
                                         {% endfor %}
                                     </tbody>
                                 </table>
+                            </div>
+                            <!-- Transactions Pagination -->
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2 border-top pt-3" id="transactionsPaginationContainer">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="transactionsPageSize" class="text-muted small mb-0">Show:</label>
+                                    <select id="transactionsPageSize" class="form-select form-select-sm w-auto" onchange="window.location.href='/home?section=transactions&txn_limit=' + this.value + '&txn_page=1'">
+                                        {% if transaction_pagination and transaction_pagination.limit not in [25, 50, 100, 200] %}
+                                        <option value="{{ transaction_pagination.limit }}" selected>{{ transaction_pagination.limit }}</option>
+                                        {% endif %}
+                                        <option value="25" {% if transaction_pagination and transaction_pagination.limit == 25 %}selected{% endif %}>25</option>
+                                        <option value="50" {% if transaction_pagination and transaction_pagination.limit == 50 %}selected{% endif %}>50</option>
+                                        <option value="100" {% if transaction_pagination and transaction_pagination.limit == 100 %}selected{% endif %}>100</option>
+                                        <option value="200" {% if transaction_pagination and transaction_pagination.limit == 200 %}selected{% endif %}>200</option>
+                                    </select>
+                                    <span class="text-muted small">
+                                        {% if transaction_pagination and transaction_pagination.total > 0 %}
+                                        Showing {{ ((transaction_pagination.page - 1) * transaction_pagination.limit) + 1 }} to {{ [transaction_pagination.page * transaction_pagination.limit, transaction_pagination.total]|min }} of {{ transaction_pagination.total }} transactions
+                                        {% else %}
+                                        Showing 0 transactions
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% if transaction_pagination and transaction_pagination.total_pages > 1 %}
+                                <nav aria-label="Transactions pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        <li class="page-item {% if not transaction_pagination.has_prev %}disabled{% endif %}">
+                                            <a class="page-link" href="/home?section=transactions&txn_page={{ transaction_pagination.page - 1 }}&txn_limit={{ transaction_pagination.limit }}" aria-label="Previous">&laquo; Prev</a>
+                                        </li>
+                                        {% for p in range(1, transaction_pagination.total_pages + 1) %}
+                                        {% if p == transaction_pagination.page or (p >= transaction_pagination.page - 2 and p <= transaction_pagination.page + 2) or p == 1 or p == transaction_pagination.total_pages %}
+                                        <li class="page-item {% if p == transaction_pagination.page %}active{% endif %}">
+                                            <a class="page-link" href="/home?section=transactions&txn_page={{ p }}&txn_limit={{ transaction_pagination.limit }}">{{ p }}</a>
+                                        </li>
+                                        {% elif p == transaction_pagination.page - 3 or p == transaction_pagination.page + 3 %}
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        <li class="page-item {% if not transaction_pagination.has_next %}disabled{% endif %}">
+                                            <a class="page-link" href="/home?section=transactions&txn_page={{ transaction_pagination.page + 1 }}&txn_limit={{ transaction_pagination.limit }}" aria-label="Next">Next &raquo;</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

@@ -234,9 +234,10 @@ function filterMembers(status) {
 
 function applyMemberFilter() {
     const mobileSearchInput = document.getElementById('mobileSearch');
-    if (!mobileSearchInput) return; // members filter not shown to members
-    const textFilter = mobileSearchInput.value.toUpperCase();
+    const table = document.getElementById('membersTable');
+    if (!table) return;
 
+    const textFilter = mobileSearchInput ? mobileSearchInput.value.trim().toUpperCase() : '';
     let statusFilter = '';
     if (document.getElementById('filterActive')?.checked) {
         statusFilter = 'active';
@@ -244,26 +245,50 @@ function applyMemberFilter() {
         statusFilter = 'expired';
     }
 
-    const table = document.getElementById('membersTable');
-    const tr = table.getElementsByTagName('tr');
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    const trs = Array.from(tbody.getElementsByTagName('tr'));
 
-    for (let i = 1; i < tr.length; i++) {
-        const mobileTd = tr[i].getElementsByTagName('td')[1];
-        const statusTd = tr[i].querySelector('.status-cell');
+    for (let i = 0; i < trs.length; i++) {
+        const row = trs[i];
+        const mobileTd = row.getElementsByTagName('td')[1];
+        const statusTd = row.querySelector('.status-cell');
 
         if (mobileTd && statusTd) {
-            const mobileValue = mobileTd.textContent || mobileTd.innerText;
+            const mobileValue = (mobileTd.textContent || mobileTd.innerText).trim().toUpperCase();
             const statusValue = statusTd.dataset.status || '';
 
-            const matchesText = mobileValue.toUpperCase().includes(textFilter);
+            const matchesText = !textFilter || mobileValue.includes(textFilter);
             const matchesStatus = (statusFilter === '') || (statusFilter === statusValue);
 
-            if (matchesText && matchesStatus) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
+            row.style.display = (matchesText && matchesStatus) ? '' : 'none';
         }
+    }
+}
+
+let memberNameSortAsc = true; // Default: A-Z
+
+function toggleMemberNameSort() {
+    memberNameSortAsc = !memberNameSortAsc;
+    const table = document.getElementById('membersTable');
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort((a, b) => {
+        const tdsA = a.getElementsByTagName('td');
+        const tdsB = b.getElementsByTagName('td');
+        const nameA = (tdsA[2]?.innerText || '').trim().toLowerCase();
+        const nameB = (tdsB[2]?.innerText || '').trim().toLowerCase();
+        return memberNameSortAsc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+
+    const icon = document.getElementById('memberNameSortIcon');
+    if (icon) {
+        icon.className = memberNameSortAsc ? "bi bi-sort-alpha-down ms-1" : "bi bi-sort-alpha-up ms-1";
     }
 }
 
@@ -273,7 +298,7 @@ function searchByMobile() {
 
 function getFilterValues() {
     const searchInput = document.getElementById('transactionSearch');
-    const textFilter = searchInput ? searchInput.value.toUpperCase() : '';
+    const textFilter = searchInput ? searchInput.value.trim().toUpperCase() : '';
     const fromDateStr = document.getElementById('transactionFromDate').value;
     const toDateStr = document.getElementById('transactionToDate').value;
     const fromDate = fromDateStr ? new Date(fromDateStr) : null;
@@ -311,17 +336,48 @@ function matchesFilters(tr, filters) {
 }
 
 function filterTransactions() {
-    const filters = getFilterValues();
     const table = document.getElementById('transactionsTable');
-    const trs = table.getElementsByTagName('tr');
+    if (!table) return;
 
-    for (let i = 1; i < trs.length; i++) {
-        trs[i].style.display = matchesFilters(trs[i], filters) ? "" : "none";
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    const trs = Array.from(tbody.getElementsByTagName('tr'));
+    const filters = getFilterValues();
+
+    for (let i = 0; i < trs.length; i++) {
+        const row = trs[i];
+        row.style.display = matchesFilters(row, filters) ? '' : 'none';
     }
 }
 
 function searchTransactionsByMobile() {
     filterTransactions();
+}
+
+let txnDateSortAsc = false; // Default: descending (newest first)
+
+function toggleTransactionDateSort() {
+    txnDateSortAsc = !txnDateSortAsc;
+    const table = document.getElementById('transactionsTable');
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort((a, b) => {
+        const dateAStr = a.querySelector('.txn-date-cell')?.innerText?.trim() || '';
+        const dateBStr = b.querySelector('.txn-date-cell')?.innerText?.trim() || '';
+        const timeA = dateAStr ? new Date(dateAStr).getTime() : 0;
+        const timeB = dateBStr ? new Date(dateBStr).getTime() : 0;
+        return txnDateSortAsc ? (timeA - timeB) : (timeB - timeA);
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+
+    const icon = document.getElementById('txnDateSortIcon');
+    if (icon) {
+        icon.className = txnDateSortAsc ? "bi bi-sort-up ms-1" : "bi bi-sort-down ms-1";
+    }
 }
 
 function clearTransactionFilters() {
@@ -912,16 +968,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentUserRole === 'member' && currentUserName) {
         if (currentMember) { populateMemberView(currentMember); }
         else { viewMember(currentUserName); }
-        filterTransactions();
+        filterTransactions(true);
     }
 
     else {
-        const currentActive = document.querySelector('.section.active');
-        if (currentActive?.id === 'register') {
-            const joiningDateField = document.getElementById('joining_date');
-            if (joiningDateField) {
-                const today = new Date().toISOString().split('T')[0];
-                joiningDateField.value = today;
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionParam = urlParams.get('section');
+        if (sectionParam && document.getElementById(sectionParam)) {
+            showSection(sectionParam);
+        } else {
+            const currentActive = document.querySelector('.section.active');
+            if (currentActive?.id === 'register') {
+                const joiningDateField = document.getElementById('joining_date');
+                if (joiningDateField) {
+                    const today = new Date().toISOString().split('T')[0];
+                    joiningDateField.value = today;
+                }
             }
         }
     }

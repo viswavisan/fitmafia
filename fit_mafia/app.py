@@ -54,7 +54,7 @@ def public_page():
 
 @app.route('/home', methods=['GET'])
 def home():
-    response=app_controller.home(session)
+    response=app_controller.home(session, request.args)
     if response['status']=='success':
         template_data=response['template_data']
         return render_template('home.html', **template_data)

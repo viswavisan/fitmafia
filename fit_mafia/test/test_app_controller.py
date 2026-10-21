@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 from fit_mafia.app_controller import (
     home, logout, register_transaction, print_receipt,
     register_member, update_member, delete_member, update_vitals, renew_subscription, get_member, login,
-    calculate_end_date, handle_session_timeout, create_db_session
+    calculate_end_date, handle_session_timeout, create_db_session, get_configured_rows_limit
 )
 from fit_mafia.constants import INTERNAL_SERVER_ERROR, MEMBER_NOT_FOUND
 from fit_mafia.test.conftest import app
@@ -125,6 +125,9 @@ def test_home_admin(mock_db_session):
 
         mock_query = mock_db_session.query.return_value
         mock_query.all.return_value = [mock_member]
+        mock_query.order_by.return_value.all.return_value = [mock_member]
+        mock_query.order_by.return_value.limit.return_value.all.return_value = [mock_member]
+        mock_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_member]
 
         result = home(session)
         assert result['status'] == 'success'
@@ -146,6 +149,8 @@ def test_home_member_success(mock_db_session):
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = mock_member
         mock_filter.all.return_value = []
+        mock_filter.order_by.return_value.limit.return_value.all.return_value = []
+        mock_filter.order_by.return_value.limit.return_value.offset.return_value.all.return_value = []
 
         result = home(session)
         assert result['status'] == 'success'
@@ -1204,4 +1209,152 @@ def test_dynamic_session_proxy_sandbox_routing():
         session['is_demo'] = True
         proxy.query(Member)
         mock_demo.query.assert_called_with(Member)
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_home_admin_transactions_ordered_by_date(mock_db_session):
+    mock_member = MagicMock()
+    mock_member.status = 'active'
+    
+    def query_side_effect(model):
+        mock_q = MagicMock()
+        if model == Member:
+            mock_q.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_member]
+            mock_q.order_by.return_value.limit.return_value.all.return_value = [mock_member]
+            mock_q.order_by.return_value.all.return_value = [mock_member]
+            mock_q.all.return_value = [mock_member]
+        elif model == Transaction:
+            mock_q.order_by.return_value.limit.return_value.offset.return_value.all.return_value = ['txn1', 'txn2']
+            mock_q.order_by.return_value.limit.return_value.all.return_value = ['txn1', 'txn2']
+            mock_q.order_by.return_value.all.return_value = ['txn1', 'txn2']
+            mock_q.all.return_value = ['txn1', 'txn2']
+        return mock_q
+
+    mock_db_session.query.side_effect = query_side_effect
+
+    session_data = {'role': 'admin', 'username': 'admin'}
+    result = home(session_data)
+
+    assert result['status'] == 'success'
+    assert 'transactions' in result['template_data']
+    assert result['template_data']['transactions'] == ['txn1', 'txn2']
+    assert result['template_data']['members'] == [mock_member]
+    mock_db_session.query.assert_any_call(Member)
+    mock_db_session.query.assert_any_call(Transaction)
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_home_member_transactions_ordered_by_date(mock_db_session):
+    mock_member = MagicMock()
+    mock_member.status = 'active'
+    mock_member.first_name = 'Test'
+    mock_member.to_dict.return_value = {'mobile_number': '9999999999'}
+    mock_db_session.query.return_value.filter_by.return_value.first.return_value = mock_member
+    mock_db_session.query.return_value.filter_by.return_value.order_by.return_value.limit.return_value.offset.return_value.all.return_value = ['txn1']
+
+    session_data = {'role': 'member', 'username': '9999999999'}
+    result = home(session_data)
+
+    assert result['status'] == 'success'
+    assert 'transactions' in result['template_data']
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_home_queries_limit_100(mock_db_session):
+    mock_member = MagicMock()
+    mock_member.status = 'active'
+    mock_member_query = MagicMock()
+    mock_txn_query = MagicMock()
+
+    def query_side_effect(model):
+        if model == Member:
+            mock_member_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_member]
+            return mock_member_query
+        elif model == Transaction:
+            mock_txn_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = ['txn1']
+            return mock_txn_query
+        return MagicMock()
+
+    mock_db_session.query.side_effect = query_side_effect
+
+    session_data = {'role': 'admin', 'username': 'admin'}
+    result = home(session_data)
+
+    assert result['status'] == 'success'
+    mock_member_query.order_by.return_value.limit.assert_called_with(100)
+    mock_txn_query.order_by.return_value.limit.assert_called_with(100)
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_home_pagination_next_page(mock_db_session):
+    mock_member = MagicMock()
+    mock_member.status = 'active'
+    mock_member_query = MagicMock()
+    mock_txn_query = MagicMock()
+
+    def query_side_effect(model):
+        if model == Member:
+            mock_member_query.count.return_value = 250
+            mock_member_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_member]
+            return mock_member_query
+        elif model == Transaction:
+            mock_txn_query.count.return_value = 350
+            mock_txn_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = ['txn1']
+            return mock_txn_query
+        return MagicMock()
+
+    mock_db_session.query.side_effect = query_side_effect
+
+    session_data = {'role': 'admin', 'username': 'admin'}
+    request_args = {'member_page': '2', 'member_limit': '100', 'txn_page': '2', 'txn_limit': '100'}
+    result = home(session_data, request_args)
+
+    assert result['status'] == 'success'
+    mock_member_query.order_by.return_value.limit.assert_called_with(100)
+    mock_member_query.order_by.return_value.limit.return_value.offset.assert_called_with(100)
+    assert result['template_data']['member_pagination']['page'] == 2
+    assert result['template_data']['member_pagination']['has_next'] is True
+    assert result['template_data']['member_pagination']['has_prev'] is True
+
+
+def test_get_configured_rows_limit():
+    with patch('config.get_property', return_value='50'):
+        assert get_configured_rows_limit() == 50
+
+    with patch('config.get_property', return_value=None):
+        with patch.dict('os.environ', {'SHOW_ROWS_LIMIT': '75'}):
+            assert get_configured_rows_limit() == 75
+
+    with patch('config.get_property', side_effect=Exception('error')):
+        assert get_configured_rows_limit() == 100
+
+
+@patch('fit_mafia.app_controller.get_configured_rows_limit', return_value=50)
+@patch('fit_mafia.app_controller.db.session')
+def test_home_configured_limit(mock_db_session, mock_get_limit):
+    mock_member = MagicMock()
+    mock_member.status = 'active'
+    mock_member_query = MagicMock()
+    mock_txn_query = MagicMock()
+
+    def query_side_effect(model):
+        if model == Member:
+            mock_member_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_member]
+            return mock_member_query
+        elif model == Transaction:
+            mock_txn_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = ['txn1']
+            return mock_txn_query
+        return MagicMock()
+
+    mock_db_session.query.side_effect = query_side_effect
+
+    session_data = {'role': 'admin', 'username': 'admin'}
+    result = home(session_data)
+
+    assert result['status'] == 'success'
+    mock_member_query.order_by.return_value.limit.assert_called_with(50)
+    mock_txn_query.order_by.return_value.limit.assert_called_with(50)
+    assert result['template_data']['member_pagination']['limit'] == 50
+    assert result['template_data']['transaction_pagination']['limit'] == 50
+
 
