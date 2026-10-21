@@ -31,12 +31,33 @@ class DynamicSessionProxy:
         return repr(self._get_current_session())
 
 
+def _create_engine(url, default_file="fitmafia.db"):
+    url = (url or "").strip()
+    if not url or url == "None":
+        base_dir = "/home/opc" if os.path.exists("/home/opc") and os.access("/home/opc", os.W_OK) else "."
+        url = f"{base_dir}/{default_file}"
+
+    kwargs = {}
+    if not any(url.startswith(scheme) for scheme in ("sqlite:", "postgres:", "postgresql:", "oracle:", "mysql:")):
+        parent = os.path.dirname(url)
+        if parent and not (os.path.exists(parent) and os.access(parent, os.W_OK)):
+            url = os.path.basename(url)
+        url = f"sqlite:///{url}"
+
+    if url.startswith("postgres"):
+        kwargs["connect_args"] = {"options": "-c search_path=fitmafia"}
+    elif url.startswith("sqlite"):
+        kwargs["connect_args"] = {"check_same_thread": False}
+
+    return create_engine(url, **kwargs)
+
+
 class Database:
     def __init__(self, db_url=None, demo_db_url=None):
-        db_url = db_url or os.getenv("DATABASE_URL", "/home/opc/fitmafia.db")
+        db_url = db_url or os.getenv("DATABASE_URL")
         demo_db_url = demo_db_url or os.getenv("DEMO_DATABASE_URL")
-        self.engine = create_engine(f"sqlite:///{db_url}", connect_args={"check_same_thread": False})
-        self.demo_engine = create_engine(f"sqlite:///{demo_db_url}", connect_args={"check_same_thread": False})
+        self.engine = _create_engine(db_url, "fitmafia.db")
+        self.demo_engine = _create_engine(demo_db_url, "fitmafia_demo.db")
 
         self._real_session = scoped_session(sessionmaker(bind=self.engine))
         self._demo_session = scoped_session(sessionmaker(bind=self.demo_engine))
