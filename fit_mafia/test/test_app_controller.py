@@ -85,6 +85,23 @@ def test_login_member_display_name(mock_db_session, mock_create_db_session):
         assert result['session_data']['display_name'] == 'Viswa Viswa'
 
 
+@pytest.mark.parametrize("user, pwd", [
+    ('demomember', 'demomember'),
+    ('demomember', '123456'),
+    ('9551830381', '123456'),
+])
+@patch('fit_mafia.app_controller.create_db_session')
+def test_login_demo_member(mock_create_session, user, pwd):
+    with app.test_request_context():
+        result = login(user, pwd)
+        assert result['status'] == 'success'
+        assert result['session_data']['role'] == 'member'
+        assert result['session_data']['is_demo'] is True
+        assert result['session_data']['username'] == '9551830381'
+        assert result['session_data']['display_name'] == 'Demo Member'
+        mock_create_session.assert_called_once()
+
+
 
 @patch('fit_mafia.app_controller.db.session')
 def test_login_exception(mock_db_session):

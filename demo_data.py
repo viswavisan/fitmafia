@@ -122,6 +122,16 @@ def get_sample_data(member_cls, transaction_cls):
             payment_method='Cash',
             status='Completed'
         ),
+        transaction_cls(
+            transaction_id=str(uuid.uuid4())[:8].upper(),
+            member_name='Viswa',
+            mobile_number='9551830381',
+            date=(today - datetime.timedelta(days=5)).isoformat(),
+            amount='1500',
+            discount='0',
+            payment_method='UPI',
+            status='Completed'
+        ),
     ]
 
     return sample_members, sample_transactions

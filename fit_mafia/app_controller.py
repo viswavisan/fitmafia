@@ -11,31 +11,23 @@ from object_storage import ObjectStorageManager
 
 def login(username,password):
     try:
-        admin_credentials = {'admin': 'admin'}
-        is_demo = False
+        presets = {
+            'admin': (('admin',), 'admin', 'Admin', False, 'admin'),
+            'demoadmin': (('demoadmin', '123456'), 'admin', 'Demo Admin', True, 'demoadmin'),
+            'demomember': (('demomember', '123456'), 'member', 'Demo Member', True, '9551830381'),
+            '9551830381': (('demomember', '123456'), 'member', 'Demo Member', True, '9551830381'),
+        }
 
-        if username == 'demoadmin':
-            if password in ('demoadmin', '123456'):
-                role = 'admin'
-                is_demo = True
-                display_name = 'Demo Admin'
-            else:
-                return {'status': 'failure', 'message': 'Invalid login credentials'}
-        elif username in admin_credentials:
-            if admin_credentials[username] == password:
-                role = 'admin'
-                is_demo = False
-                display_name = 'Admin'
-            else:
+        if username in presets:
+            valid_passwords, role, display_name, is_demo, username = presets[username]
+            if password not in valid_passwords:
                 return {'status': 'failure', 'message': 'Invalid login credentials'}
         else:
             member = db.session.query(Member).filter_by(mobile_number=username).first()
-            if member and member.password == password:
-                role = 'member'
-                is_demo = False
-                display_name = (member.first_name.strip() if isinstance(member.first_name, str) and member.first_name.strip() else '') or username
-            else:
+            if not member or member.password != password:
                 return {'status': 'failure', 'message': 'Invalid login credentials'}
+            role, is_demo = 'member', False
+            display_name = (member.first_name.strip() if isinstance(member.first_name, str) and member.first_name.strip() else '') or username
 
         new_session_id = create_db_session(username)
 

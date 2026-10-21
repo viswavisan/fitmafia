@@ -120,7 +120,8 @@
                             &#9776;
                         </button>
                         {% if current_user.is_demo %}
-                        <span class="badge bg-warning text-dark py-2 px-3 fw-bold shadow-sm d-inline-flex align-items-center">
+                        <span
+                            class="badge bg-warning text-dark py-2 px-3 fw-bold shadow-sm d-inline-flex align-items-center">
                             <i class="bi bi-shield-lock-fill me-1"></i> Demo Sandbox Mode
                         </span>
                         {% endif %}
@@ -139,7 +140,9 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-info-circle-fill fs-4 me-3 text-warning"></i>
                         <div>
-                            <strong>Demo Admin Sandbox:</strong> You are exploring in a fully isolated sandbox environment. All operations (creating members, editing profiles, recording payments) are saved safely in the demo database and do not touch live data.
+                            <strong>Demo Admin Sandbox:</strong> You are exploring in a fully isolated sandbox
+                            environment. All operations (creating members, editing profiles, recording payments) are
+                            saved safely in the demo database and do not touch live data.
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -451,7 +454,10 @@
                                                     <th>Password:</th>
                                                     <td>
                                                         <span id="viewPassword"></span>
-                                                        <button type="button" class="btn btn-sm btn-link text-secondary p-0 ms-2" id="toggleViewPasswordBtn" onclick="toggleViewPassword()" title="Toggle Password" style="vertical-align: baseline;">
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-link text-secondary p-0 ms-2"
+                                                            id="toggleViewPasswordBtn" onclick="toggleViewPassword()"
+                                                            title="Toggle Password" style="vertical-align: baseline;">
                                                             <i class="bi bi-eye-slash" id="viewPasswordIcon"></i>
                                                         </button>
                                                     </td>
