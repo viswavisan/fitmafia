@@ -23,7 +23,6 @@ class Member(Base):
     __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
     mobile_number = Column(String(10), primary_key=True)
     first_name = Column(String(50), nullable=True)
-    last_name = Column(String(50), nullable=True)
     dob = Column(String(50), nullable=True)
     gender = Column(String(50), nullable=True)
     email = Column(String(50), nullable=True)

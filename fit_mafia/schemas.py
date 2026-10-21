@@ -5,7 +5,6 @@ class MemberSchema(Schema):
     id = fields.Int(dump_only=True)
     mobile_number = fields.Str(required=True)
     first_name = fields.Str()
-    last_name = fields.Str()
     password = fields.Str()
     email = fields.Email()
     dob = fields.Str()

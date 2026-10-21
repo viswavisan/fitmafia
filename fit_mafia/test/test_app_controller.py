@@ -49,7 +49,6 @@ def test_login_member(mock_db_session, mock_create_db_session, username, passwor
             mock_member = MagicMock(spec=Member)
             mock_member.password = member_password
             mock_member.first_name = 'John'
-            mock_member.last_name = 'Doe'
             mock_filter.first.return_value = mock_member
         else:
             mock_filter.first.return_value = None
@@ -63,6 +62,24 @@ def test_login_member(mock_db_session, mock_create_db_session, username, passwor
             mock_create_db_session.assert_called_once()
         else:
             assert 'role' not in result.get('session_data', {})
+
+
+@patch('fit_mafia.app_controller.create_db_session')
+@patch('fit_mafia.app_controller.db.session')
+def test_login_member_display_name(mock_db_session, mock_create_db_session):
+    with app.test_request_context():
+        mock_member = MagicMock(spec=Member)
+        mock_member.password = 'password123'
+        mock_member.first_name = 'Viswa Viswa'
+
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
+
+        result = login('1234567890', 'password123')
+        assert result['status'] == 'success'
+        assert result['session_data']['display_name'] == 'Viswa Viswa'
+
 
 
 @patch('fit_mafia.app_controller.db.session')
@@ -296,7 +313,6 @@ def test_register_member_success(mock_db_session, mock_storage_manager):
         mock_request_data = {
             'mobile_number': '1234567890',
             'first_name': 'John',
-            'last_name': 'Doe',
             'password': 'password123'
         }
         mock_request = MagicMock()
@@ -324,7 +340,6 @@ def test_update_member_success(mock_db_session, mock_storage_manager):
         mock_request_data = {
             'mobile_number': mobile_number,
             'first_name': 'John Updated',
-            'last_name': 'Doe Updated',
         }
         mock_request = MagicMock()
         mock_request.get.side_effect = lambda key: mock_request_data.get(key)
@@ -333,7 +348,7 @@ def test_update_member_success(mock_db_session, mock_storage_manager):
         mock_file.filename = ''
 
         # Simulate existing member
-        mock_member = Member(mobile_number=mobile_number, first_name='John', last_name='Doe')
+        mock_member = Member(mobile_number=mobile_number, first_name='John')
         mock_query = mock_db_session.query.return_value
         mock_filter = mock_query.filter_by.return_value
         mock_filter.first.return_value = mock_member
@@ -343,7 +358,6 @@ def test_update_member_success(mock_db_session, mock_storage_manager):
         assert result['status'] == 'success'
         assert 'updated' in result['message']
         assert mock_member.first_name == 'John Updated'
-        assert mock_member.last_name == 'Doe Updated'
         mock_db_session.add.assert_not_called() # Should not add a new member
         mock_db_session.commit.assert_called_once()
 
@@ -356,7 +370,6 @@ def test_register_member_with_file_upload(mock_db_session, mock_storage_manager)
         mock_request_data = {
             'mobile_number': mobile_number,
             'first_name': 'Jane',
-            'last_name': 'Doe',
             'password': 'password123'
         }
         mock_request = MagicMock()
@@ -644,7 +657,6 @@ def test_renew_subscription_success(mock_db_session):
 
         mock_member = MagicMock(spec=Member)
         mock_member.first_name = "John"
-        mock_member.last_name = "Doe"
         mock_member.mobile_number = "9999999999"
         
         mock_query = mock_db_session.query.return_value
@@ -682,7 +694,6 @@ def test_renew_subscription_with_dict(mock_db_session):
 
         mock_member = MagicMock(spec=Member)
         mock_member.first_name = "Jane"
-        mock_member.last_name = "Smith"
         mock_member.mobile_number = "9999999999"
 
         mock_query = mock_db_session.query.return_value

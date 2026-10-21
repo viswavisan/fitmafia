@@ -408,7 +408,7 @@
                             <button id="editMemberBtn" class="btn btn-primary me-2">Edit</button>
                             {% if current_user.role == 'admin' %}
                             <button id="deleteMemberDetailBtn" class="btn btn-outline-danger me-2"
-                                onclick="openDeleteMemberModal(currentMemberData?.mobile_number, (currentMemberData?.first_name || '') + ' ' + (currentMemberData?.last_name || ''))">
+                                onclick="openDeleteMemberModal(currentMemberData?.mobile_number, currentMemberData?.first_name || '')">
                                 <i class="bi bi-trash"></i> Delete
                             </button>
                             <button class="btn btn-secondary" onclick="showSection('members', event)">Back</button>
@@ -423,12 +423,8 @@
                                         <table class="table table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <th>First Name:</th>
+                                                    <th>Name:</th>
                                                     <td id="viewFirstName"></td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Last Name:</th>
-                                                    <td id="viewLastName"></td>
                                                 </tr>
                                                 <tr>
                                                     <th>Mobile Number:</th>

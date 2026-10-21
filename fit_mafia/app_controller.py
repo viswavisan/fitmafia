@@ -23,7 +23,7 @@ def login(username,password):
             member = db.session.query(Member).filter_by(mobile_number=username).first()
             if member and member.password == password:
                 role = 'member'
-                display_name = f"{member.first_name} {member.last_name}".strip() or username
+                display_name = (member.first_name.strip() if isinstance(member.first_name, str) and member.first_name.strip() else '') or username
             else:
                 return {'status': 'failure', 'message': 'Invalid login credentials'}
 
@@ -75,6 +75,10 @@ def home(session):
                 session.clear()
                 return {'status': 'failure',
                         'message': f"Member not found for username {username} in session. Clearing session."}
+
+            display_name = (member.first_name.strip() if isinstance(member.first_name, str) and member.first_name.strip() else '') or username
+            session['display_name'] = display_name
+            current_user['display_name'] = display_name
 
             template_data = {
                 'current_user': current_user,
@@ -177,7 +181,6 @@ def register_member(session,request,file):
         new_member = Member(
             mobile_number=mobile_number,
             first_name=request.get('first_name'),
-            last_name=request.get('last_name'),
             dob=request.get('dob'),
             gender=request.get('gender'),
             email=request.get('email'),
@@ -214,7 +217,6 @@ def update_member(_, request, file):
 
     try:
         member.first_name = request.get('first_name')
-        member.last_name = request.get('last_name')
         member.dob = request.get('dob')
         member.gender = request.get('gender')
         member.email = request.get('email')
@@ -306,9 +308,10 @@ def renew_subscription(session,request):
         payment_method = request.get('payment_method')
         if amount and payment_method:
             # create_transaction(member, amount, request.get('discount'), payment_method)
+            member_name = (member.first_name.strip() if isinstance(member.first_name, str) and member.first_name.strip() else '') or member.mobile_number
             new_txn = Transaction(
                 transaction_id=request.get('transaction_id') or generate_transaction_id(),
-                member_name=f"{member.first_name or ''} {member.last_name or ''}".strip() or member.mobile_number,
+                member_name=member_name,
                 mobile_number=member.mobile_number,
                 date=datetime.date.today().isoformat(),
                 amount=amount,

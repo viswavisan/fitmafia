@@ -345,7 +345,6 @@ function populateMemberView(data) {
 
     // Populate data in the view section
     document.getElementById('viewFirstName').innerText = data.first_name || 'N/A';
-    document.getElementById('viewLastName').innerText = data.last_name || 'N/A';
     document.getElementById('viewMobileNumber').innerText = data.mobile_number || 'N/A';
     const passwordEl = document.getElementById('viewPassword');
     if (passwordEl) {
@@ -545,10 +544,6 @@ function editMember() {
     // Populate the form with currentMemberData
     document.getElementById('memberForm').action = '/update_member';
     document.getElementById('firstName').value = currentMemberData.first_name || '';
-    const lastNameField = document.getElementById('lastName');
-    if (lastNameField) {
-        lastNameField.value = currentMemberData.last_name || '';
-    }
     document.getElementById('mobile_number').value = currentMemberData.mobile_number || '';
     document.getElementById('mobile_number').setAttribute('readonly', true); // Prevent PK change
     document.getElementById('email').value = currentMemberData.email || '';
