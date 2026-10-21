@@ -1259,8 +1259,9 @@ def test_home_member_transactions_ordered_by_date(mock_db_session):
     assert 'transactions' in result['template_data']
 
 
+@patch('fit_mafia.app_controller.get_configured_rows_limit', return_value=100)
 @patch('fit_mafia.app_controller.db.session')
-def test_home_queries_limit_100(mock_db_session):
+def test_home_queries_limit_100(mock_db_session, mock_limit):
     mock_member = MagicMock()
     mock_member.status = 'active'
     mock_member_query = MagicMock()
