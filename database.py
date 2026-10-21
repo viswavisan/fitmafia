@@ -31,36 +31,12 @@ class DynamicSessionProxy:
         return repr(self._get_current_session())
 
 
-def _make_engine(path_or_url, fallback_filename):
-    raw = str(path_or_url or "").strip()
-    if not raw or raw == "None":
-        raw = f"/home/opc/{fallback_filename}"
-
-    if raw.startswith("sqlite:///"):
-        raw = raw[len("sqlite:///"):]
-    elif raw.startswith("sqlite://"):
-        raw = raw[len("sqlite://"):]
-
-    parent = os.path.dirname(raw)
-    if parent:
-        try:
-            os.makedirs(parent, exist_ok=True)
-            test_file = os.path.join(parent, ".perm_check")
-            with open(test_file, "a") as f:
-                pass
-            os.remove(test_file)
-        except Exception:
-            raw = os.path.basename(raw)
-
-    return create_engine(f"sqlite:///{raw}", connect_args={"check_same_thread": False})
-
-
 class Database:
     def __init__(self, db_url=None, demo_db_url=None):
-        db_url = db_url or os.getenv("DATABASE_URL")
+        db_url = db_url or os.getenv("DATABASE_URL", "/home/opc/fitmafia.db")
         demo_db_url = demo_db_url or os.getenv("DEMO_DATABASE_URL")
-        self.engine = _make_engine(db_url, "fitmafia.db")
-        self.demo_engine = _make_engine(demo_db_url, "fitmafia_demo.db")
+        self.engine = create_engine(f"sqlite:///{db_url}", connect_args={"check_same_thread": False})
+        self.demo_engine = create_engine(f"sqlite:///{demo_db_url}", connect_args={"check_same_thread": False})
 
         self._real_session = scoped_session(sessionmaker(bind=self.engine))
         self._demo_session = scoped_session(sessionmaker(bind=self.demo_engine))
