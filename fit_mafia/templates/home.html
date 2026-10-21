@@ -119,6 +119,11 @@
                             data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-label="Open mobile menu">
                             &#9776;
                         </button>
+                        {% if current_user.is_demo %}
+                        <span class="badge bg-warning text-dark py-2 px-3 fw-bold shadow-sm d-inline-flex align-items-center">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Demo Sandbox Mode
+                        </span>
+                        {% endif %}
                     </div>
                     <div class="user-profile">
                         <span class="text-secondary d-none d-sm-inline">Welcome,</span>
@@ -128,6 +133,18 @@
                         </div>
                     </div>
                 </div>
+
+                {% if current_user.is_demo %}
+                <div class="alert alert-warning alert-dismissible fade show mt-3 mb-4 shadow-sm border-0" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill fs-4 me-3 text-warning"></i>
+                        <div>
+                            <strong>Demo Admin Sandbox:</strong> You are exploring in a fully isolated sandbox environment. All operations (creating members, editing profiles, recording payments) are saved safely in the demo database and do not touch live data.
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
 
                 <!-- Dashboard Overview (Admin Only) -->
                 {% if current_user.role == 'admin' %}

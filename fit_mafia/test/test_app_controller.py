@@ -13,13 +13,16 @@ from fit_mafia.models import Member, Session, Transaction
 
 # --- LOGIN TESTS ---
 
-@pytest.mark.parametrize("username, password, expected_status, expected_role", [
-    ('admin', 'admin', 'success', 'admin'),
-    ('admin', 'wrong_password', 'failure', None),
+@pytest.mark.parametrize("username, password, expected_status, expected_role, expected_is_demo", [
+    ('admin', 'admin', 'success', 'admin', False),
+    ('admin', 'wrong_password', 'failure', None, False),
+    ('demoadmin', 'demoadmin', 'success', 'admin', True),
+    ('demoadmin', '123456', 'success', 'admin', True),
+    ('demoadmin', 'wrong_password', 'failure', None, False),
 ])
 @patch('fit_mafia.app_controller.create_db_session')
 @patch('fit_mafia.app_controller.db.session')
-def test_login_admin(mock_db_session, mock_create_db_session, username, password, expected_status, expected_role):
+def test_login_admin(mock_db_session, mock_create_db_session, username, password, expected_status, expected_role, expected_is_demo):
     with app.test_request_context():
         result = login(username, password)
 
@@ -27,6 +30,7 @@ def test_login_admin(mock_db_session, mock_create_db_session, username, password
         if expected_status == 'success':
             assert result['session_data']['role'] == expected_role
             assert result['session_data'].get('logged_in') is True
+            assert result['session_data'].get('is_demo') is expected_is_demo
             mock_create_db_session.assert_called_once()
         else:
             assert 'role' not in result.get('session_data', {})
@@ -551,6 +555,90 @@ def test_update_member_exception(mock_db_session, mock_logging):
 
 
 @patch('fit_mafia.app_controller.db.session')
+def test_update_member_joining_date_not_editable_for_member(mock_db_session):
+    with app.test_request_context():
+        mobile_number = '1234567890'
+        mock_session = {'role': 'member', 'username': mobile_number}
+        mock_request_data = {
+            'mobile_number': mobile_number,
+            'first_name': 'UpdatedName',
+            'email': 'updated@example.com',
+            'joining_date': '2026-12-31'
+        }
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = ''
+
+        original_joining_date = '2025-01-15'
+        mock_existing_member = Member(
+            mobile_number=mobile_number,
+            first_name='OldName',
+            email='old@example.com',
+            joining_date=original_joining_date
+        )
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_existing_member
+
+        result = update_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'success'
+        assert mock_existing_member.first_name == 'UpdatedName'
+        assert mock_existing_member.email == 'updated@example.com'
+        # Joining date must NOT have changed for member
+        assert mock_existing_member.joining_date == original_joining_date
+        mock_db_session.commit.assert_called_once()
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_update_member_joining_date_editable_for_admin(mock_db_session):
+    with app.test_request_context():
+        mobile_number = '1234567890'
+        mock_session = {'role': 'admin'}
+        mock_request_data = {
+            'mobile_number': mobile_number,
+            'first_name': 'AdminUpdated',
+            'joining_date': '2026-05-20'
+        }
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = ''
+
+        mock_existing_member = Member(
+            mobile_number=mobile_number,
+            first_name='OldName',
+            joining_date='2025-01-15'
+        )
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_existing_member
+
+        result = update_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'success'
+        assert mock_existing_member.first_name == 'AdminUpdated'
+        # Admin CAN update joining date
+        assert mock_existing_member.joining_date == '2026-05-20'
+        mock_db_session.commit.assert_called_once()
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_update_member_unauthorized_for_other_member(mock_db_session):
+    with app.test_request_context():
+        mock_session = {'role': 'member', 'username': '1111111111'}
+        mock_request_data = {'mobile_number': '9999999999'}
+        mock_request = MagicMock()
+        mock_request.get.side_effect = lambda key: mock_request_data.get(key)
+        mock_file = MagicMock()
+        mock_file.filename = ''
+
+        result = update_member(mock_session, mock_request, mock_file)
+        assert result['status'] == 'failure'
+        assert result['message'] == 'Unauthorized'
+        assert result.get('code') == 403
+
+
+@patch('fit_mafia.app_controller.db.session')
 def test_update_vitals_success(mock_db_session):
     with app.test_request_context():
         mock_session = {'role': 'admin'}
@@ -577,6 +665,42 @@ def test_update_vitals_unauthorized():
     with app.test_request_context():
         mock_session = {'role': 'member'} # Non-admin user
         result = update_vitals(mock_session, {})
+        assert result['status'] == 'error'
+        assert result['message'] == 'Unauthorized'
+        assert result['code'] == 403
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_update_vitals_member_self_success(mock_db_session):
+    with app.test_request_context():
+        mock_session = {'role': 'member', 'username': '1234567890'}
+        mock_request_data = {
+            'mobile_number': '1234567890',
+            'height': '175',
+            'weight': '70',
+            'bmi': '22.8'
+        }
+
+        mock_member = MagicMock(spec=Member)
+        mock_query = mock_db_session.query.return_value
+        mock_filter = mock_query.filter_by.return_value
+        mock_filter.first.return_value = mock_member
+
+        result = update_vitals(mock_session, mock_request_data)
+        assert result['status'] == 'success'
+        assert result['code'] == 200
+        assert mock_member.height == '175'
+        assert mock_member.weight == '70'
+
+
+def test_update_vitals_member_other_forbidden():
+    with app.test_request_context():
+        mock_session = {'role': 'member', 'username': '1234567890'}
+        mock_request_data = {
+            'mobile_number': '9999999999',
+            'height': '175'
+        }
+        result = update_vitals(mock_session, mock_request_data)
         assert result['status'] == 'error'
         assert result['message'] == 'Unauthorized'
         assert result['code'] == 403
@@ -1040,4 +1164,27 @@ def test_delete_member_exception(mock_db_session, mock_logging):
         assert result['message'] == INTERNAL_SERVER_ERROR
         mock_db_session.rollback.assert_called_once()
         mock_logging.exception.assert_called_once()
+
+
+def test_dynamic_session_proxy_sandbox_routing():
+    from database import DynamicSessionProxy
+    from flask import session
+
+    mock_real = MagicMock(name="real_session")
+    mock_demo = MagicMock(name="demo_session")
+
+    proxy = DynamicSessionProxy(mock_real, lambda: mock_demo)
+
+    # 1. Without demo flag in session, routes to real session
+    with app.test_request_context():
+        session['is_demo'] = False
+        proxy.query(Member)
+        mock_real.query.assert_called_with(Member)
+        mock_demo.query.assert_not_called()
+
+    # 2. With is_demo=True, routes to demo session
+    with app.test_request_context():
+        session['is_demo'] = True
+        proxy.query(Member)
+        mock_demo.query.assert_called_with(Member)
 

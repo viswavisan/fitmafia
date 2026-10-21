@@ -7,20 +7,18 @@ from database import Base, Database
 import os
 
 db = Database(os.getenv("DATABASE_URL"))
-db_url = os.getenv("DATABASE_URL", "")
-SCHEMA_NAME = 'fitmafia' if "postgres" in db_url else None
+
 
 class Session(Base):
     __tablename__ = 'user_session'
-    __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
     session_id = Column(String(50), primary_key=True)
     start_time = Column(String(50), nullable=True)
     end_time = Column(String(50), nullable=True)
     user_name = Column(String(50), nullable=True)
 
+
 class Member(Base):
     __tablename__ = 'member'
-    __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
     mobile_number = Column(String(10), primary_key=True)
     first_name = Column(String(50), nullable=True)
     dob = Column(String(50), nullable=True)
@@ -68,7 +66,6 @@ class Member(Base):
 
 class Transaction(Base):
     __tablename__ = 'transaction'
-    __table_args__ = {'schema': SCHEMA_NAME} if SCHEMA_NAME else {}
     transaction_id = Column(String(50), primary_key=True)
     member_name = Column(String(50), nullable=True)
     mobile_number = Column(String(10), nullable=True)
@@ -80,3 +77,4 @@ class Transaction(Base):
 
 # Create tables in the database if they do not exist
 db.init_db()
+db.reset_demo_db(force=False)

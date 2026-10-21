@@ -12,10 +12,19 @@ from object_storage import ObjectStorageManager
 def login(username,password):
     try:
         admin_credentials = {'admin': 'admin'}
-        
-        if username in admin_credentials:
+        is_demo = False
+
+        if username == 'demoadmin':
+            if password in ('demoadmin', '123456'):
+                role = 'admin'
+                is_demo = True
+                display_name = 'Demo Admin'
+            else:
+                return {'status': 'failure', 'message': 'Invalid login credentials'}
+        elif username in admin_credentials:
             if admin_credentials[username] == password:
                 role = 'admin'
+                is_demo = False
                 display_name = 'Admin'
             else:
                 return {'status': 'failure', 'message': 'Invalid login credentials'}
@@ -23,6 +32,7 @@ def login(username,password):
             member = db.session.query(Member).filter_by(mobile_number=username).first()
             if member and member.password == password:
                 role = 'member'
+                is_demo = False
                 display_name = (member.first_name.strip() if isinstance(member.first_name, str) and member.first_name.strip() else '') or username
             else:
                 return {'status': 'failure', 'message': 'Invalid login credentials'}
@@ -36,6 +46,7 @@ def login(username,password):
                 'logged_in': True,
                 'username': username,
                 'role': role,
+                'is_demo': is_demo,
                 'display_name': display_name,
                 'last_active': datetime.datetime.now().isoformat(),
                 'session_id': new_session_id
@@ -49,10 +60,12 @@ def login(username,password):
 def home(session):
     role = session.get('role', 'member')
     username = session.get('username')
+    is_demo = session.get('is_demo', False)
     current_user = {
         "username": username,
         "display_name": session.get('display_name', 'member'),
-        "role": role
+        "role": role,
+        "is_demo": is_demo
     }
 
     try:
@@ -199,13 +212,22 @@ def register_member(session,request,file):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR}
 
 
-def update_member(_, request, file):
+def update_member(session, request, file):
     mobile_number = request.get('mobile_number')
 
     if not (mobile_number and len(mobile_number) == 10 and mobile_number.isdigit()):
         return {'status': 'failure', 'message': 'Mobile number must be 10 digits.'}
 
+    role = session.get('role') if session else None
+    username = session.get('username') if session else None
+
+    if role != 'admin' and username != mobile_number:
+        return {'status': 'failure', 'message': 'Unauthorized', 'code': 403}
+
     member = db.session.query(Member).filter_by(mobile_number=mobile_number).first()
+    if not member:
+        return {'status': 'failure', 'message': MEMBER_NOT_FOUND, 'code': 404}
+
     upload_result = None
     if file and file.filename != '':
         storage_manager = ObjectStorageManager()
@@ -221,7 +243,8 @@ def update_member(_, request, file):
         member.gender = request.get('gender')
         member.email = request.get('email')
         member.address = request.get('address')
-        member.joining_date = request.get('joining_date') or member.joining_date
+        if role == 'admin':
+            member.joining_date = request.get('joining_date') or member.joining_date
         if upload_result:
             member.photo = upload_result
 
@@ -259,11 +282,13 @@ def delete_member(session, mobile_number):
         return {'status': 'error', 'message': INTERNAL_SERVER_ERROR, 'code': 500}
 
 
-def update_vitals(session,request):
-    if session.get('role') != 'admin':
-        return {'status':'error','message':'Unauthorized','code':403}
-
+def update_vitals(session, request):
+    role = session.get('role')
     mobile_number = request.get('mobile_number')
+
+    if role != 'admin' and (role != 'member' or not mobile_number or session.get('username') != mobile_number):
+        return {'status': 'error', 'message': 'Unauthorized', 'code': 403}
+
     if not mobile_number:
         return {'status': 'error', 'message': 'Mobile number required', 'code': 400}
 

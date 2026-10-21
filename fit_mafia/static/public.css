@@ -43,6 +43,18 @@
             background-color: var(--primary-color);
             color: white;
         }
+        .btn-demo {
+            background-color: rgba(255, 193, 7, 0.1);
+            border: 2px solid #ffc107;
+            color: #ffc107;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        .btn-demo:hover {
+            background-color: #ffc107;
+            color: #000;
+        }
 
         /* Login Form embedded in nav/dropdown or inline */
         .login-form-container {
@@ -105,6 +117,21 @@
         .btn-hero:hover {
             background-color: #b20710;
             color: white;
+        }
+        .btn-hero-demo {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        .btn-hero-demo:hover {
+            background-color: white;
+            color: black;
         }
 
         /* Section Titles */

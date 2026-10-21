@@ -124,7 +124,7 @@ def register_member():
 @app.route('/update_member', methods=['POST'])
 def update_member():
     response = app_controller.update_member(session, request.form.to_dict(), request.files.get('photo'))
-    return jsonify({'status': response['status'], 'message': response['message']}), 200
+    return jsonify({'status': response['status'], 'message': response['message']}), response.get('code', 200)
 
 @app.route('/update_vitals', methods=['POST'])
 def update_vitals():

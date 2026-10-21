@@ -108,7 +108,7 @@ if (captureBtn) {
 // Also preview if a file is chosen via the normal file input
 const photoInput = document.getElementById('photo');
 if (photoInput) {
-    photoInput.addEventListener('change', function(e) {
+    photoInput.addEventListener('change', function (e) {
         if (e.target.files?.[0]) {
             const file = e.target.files[0];
             const maxSize = 1 * 1024 * 1024; // 1 MB
@@ -123,7 +123,7 @@ if (photoInput) {
             }
 
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = function (evt) {
                 const preview = document.getElementById('photoPreview');
                 preview.src = evt.target.result;
                 preview.style.display = 'block';
@@ -526,7 +526,7 @@ async function renewSubscription(event) {
             showFlashMessage('Subscription renewed successfully! A new transaction has been recorded.', 'success');
             viewMember(mobileNumber); // Reload to get updated data
             // Also trigger a background reload of transactions just in case the user switches tabs
-            fetch('/fitmafia').then(() => {});
+            fetch('/fitmafia').then(() => { });
         } else {
             showFlashMessage('Failed to renew subscription.', 'danger');
         }
@@ -547,9 +547,6 @@ function editMember() {
     document.getElementById('mobile_number').value = currentMemberData.mobile_number || '';
     document.getElementById('mobile_number').setAttribute('readonly', true); // Prevent PK change
     document.getElementById('email').value = currentMemberData.email || '';
-    if (currentUserRole === 'member') {
-         document.getElementById('email').setAttribute('readonly', true);
-    }
 
     // Set password to the actual password and make it not required for submission
     const passwordField = document.getElementById('password');
@@ -559,7 +556,15 @@ function editMember() {
     document.getElementById('gender').value = currentMemberData.gender || '';
     document.getElementById('address').value = currentMemberData.address || '';
     document.getElementById('dob').value = currentMemberData.dob || '';
-    document.getElementById('joining_date').value = currentMemberData.joining_date || '';
+    const joiningDateField = document.getElementById('joining_date');
+    joiningDateField.value = currentMemberData.joining_date || '';
+    if (currentUserRole === 'member') {
+        joiningDateField.setAttribute('readonly', 'true');
+        joiningDateField.setAttribute('disabled', 'true');
+    } else {
+        joiningDateField.removeAttribute('readonly');
+        joiningDateField.removeAttribute('disabled');
+    }
 
     // If editing, hide the terms block since they've already accepted
     document.getElementById('termsContainer').style.display = 'none';
@@ -593,6 +598,8 @@ function resetForm(event) {
     // Remove readonly from mobile number
     document.getElementById('mobile_number').removeAttribute('readonly');
     document.getElementById('email').removeAttribute('readonly');
+    document.getElementById('joining_date').removeAttribute('readonly');
+    document.getElementById('joining_date').removeAttribute('disabled');
     document.getElementById('password').setAttribute('required', 'true');
 
     // Reset password visibility
@@ -621,7 +628,7 @@ function resetForm(event) {
     document.getElementById('joining_date').value = today;
 
     // If called explicitly via Cancel button, go back to Member list or Dashboard
-    if(event?.target.id === 'cancelEditBtn') {
+    if (event?.target.id === 'cancelEditBtn') {
         if (currentUserRole === 'admin') {
             showSection('members');
         } else {
@@ -851,7 +858,7 @@ async function executeDeleteMember() {
 
             // Remove table row
             const row = document.getElementById(`member-row-${mobileNumber}`) ||
-                        document.querySelector(`tr[data-mobile="${mobileNumber}"]`);
+                document.querySelector(`tr[data-mobile="${mobileNumber}"]`);
             if (row) {
                 const statusCell = row.querySelector('.status-cell');
                 const wasActive = statusCell && statusCell.dataset.status === 'active';
@@ -900,12 +907,13 @@ async function executeDeleteMember() {
 //on load function
 document.addEventListener('DOMContentLoaded', () => {
     const togglePassword = document.getElementById('togglePassword');
-    if (togglePassword) {togglePassword.addEventListener('click', togglePasswordVisibility);}
+    if (togglePassword) { togglePassword.addEventListener('click', togglePasswordVisibility); }
 
     if (currentUserRole === 'member' && currentUserName) {
         if (currentMember) { populateMemberView(currentMember); }
         else { viewMember(currentUserName); }
-        filterTransactions();}
+        filterTransactions();
+    }
 
     else {
         const currentActive = document.querySelector('.section.active');
