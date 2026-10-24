@@ -1359,3 +1359,72 @@ def test_home_configured_limit(mock_db_session, mock_get_limit):
     assert result['template_data']['transaction_pagination']['limit'] == 50
 
 
+@patch('fit_mafia.app_controller.db.session')
+def test_home_admin_filter_expired(mock_db_session):
+    mock_member = MagicMock()
+    mock_member.status = 'expired'
+    mock_member_query = MagicMock()
+    mock_filter_query = MagicMock()
+    mock_member_query.filter.return_value = mock_filter_query
+    mock_filter_query.count.return_value = 15
+    mock_filter_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_member]
+
+    mock_txn_query = MagicMock()
+    mock_txn_query.count.return_value = 10
+    mock_txn_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = []
+
+    def query_side_effect(model):
+        if model == Member:
+            return mock_member_query
+        elif model == Transaction:
+            return mock_txn_query
+        return MagicMock()
+
+    mock_db_session.query.side_effect = query_side_effect
+
+    session_data = {'role': 'admin', 'username': 'admin'}
+    request_args = {'member_status': 'expired', 'member_page': '1', 'member_limit': '10'}
+    result = home(session_data, request_args)
+
+    assert result['status'] == 'success'
+    assert result['template_data']['member_status'] == 'expired'
+    assert result['template_data']['member_pagination']['total'] == 15
+    assert result['template_data']['member_pagination']['total_pages'] == 2
+    assert result['template_data']['member_pagination']['has_next'] is True
+    assert mock_member_query.filter.called
+
+
+@patch('fit_mafia.app_controller.db.session')
+def test_home_admin_filter_search(mock_db_session):
+    mock_member = MagicMock()
+    mock_member.status = 'active'
+    mock_member_query = MagicMock()
+    mock_filter_query = MagicMock()
+    mock_member_query.filter.return_value = mock_filter_query
+    mock_filter_query.count.return_value = 3
+    mock_filter_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_member]
+
+    mock_txn_query = MagicMock()
+    mock_txn_query.count.return_value = 0
+    mock_txn_query.order_by.return_value.limit.return_value.offset.return_value.all.return_value = []
+
+    def query_side_effect(model):
+        if model == Member:
+            return mock_member_query
+        elif model == Transaction:
+            return mock_txn_query
+        return MagicMock()
+
+    mock_db_session.query.side_effect = query_side_effect
+
+    session_data = {'role': 'admin', 'username': 'admin'}
+    request_args = {'member_search': '98765'}
+    result = home(session_data, request_args)
+
+    assert result['status'] == 'success'
+    assert result['template_data']['member_search'] == '98765'
+    assert result['template_data']['member_pagination']['total'] == 3
+    assert mock_member_query.filter.called
+
+
+

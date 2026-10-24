@@ -215,55 +215,49 @@ function showSection(sectionId, event) {
     }
 }
 
-function filterMembers(status) {
-    // Switch to the members section
-    showSection('members');
+function getMemberUrl(overrides = {}) {
+    const url = new URL(window.location.origin + '/home');
+    const currentParams = new URLSearchParams(window.location.search);
 
-    // Update the radio button selection
-    if (status === 'active') {
-        document.getElementById('filterActive').checked = true;
-    } else if (status === 'expired') {
-        document.getElementById('filterExpired').checked = true;
-    } else {
-        document.getElementById('filterAll').checked = true;
+    url.searchParams.set('section', 'members');
+    url.searchParams.set('member_page', overrides.page !== undefined ? overrides.page : '1');
+
+    const limit = overrides.limit !== undefined ? overrides.limit : (document.getElementById('membersPageSize')?.value || currentParams.get('member_limit'));
+    if (limit) url.searchParams.set('member_limit', limit);
+
+    let status = overrides.status !== undefined ? overrides.status : null;
+    if (status === null) {
+        if (document.getElementById('filterActive')?.checked) status = 'active';
+        else if (document.getElementById('filterExpired')?.checked) status = 'expired';
+        else status = '';
     }
+    if (status) url.searchParams.set('member_status', status);
 
-    // Apply the filter
-    applyMemberFilter();
+    let search = overrides.search !== undefined ? overrides.search : (document.getElementById('mobileSearch')?.value?.trim() || '');
+    if (search) url.searchParams.set('member_search', search);
+
+    return url.toString();
+}
+
+function filterMembers(status) {
+    window.location.href = getMemberUrl({ status: status || '', page: 1 });
+}
+
+function applyMemberSearch() {
+    const searchVal = document.getElementById('mobileSearch')?.value?.trim() || '';
+    window.location.href = getMemberUrl({ search: searchVal, page: 1 });
+}
+
+function clearMemberSearch() {
+    window.location.href = getMemberUrl({ search: '', page: 1 });
+}
+
+function changeMembersPageSize(size) {
+    window.location.href = getMemberUrl({ limit: size, page: 1 });
 }
 
 function applyMemberFilter() {
-    const mobileSearchInput = document.getElementById('mobileSearch');
-    const table = document.getElementById('membersTable');
-    if (!table) return;
-
-    const textFilter = mobileSearchInput ? mobileSearchInput.value.trim().toUpperCase() : '';
-    let statusFilter = '';
-    if (document.getElementById('filterActive')?.checked) {
-        statusFilter = 'active';
-    } else if (document.getElementById('filterExpired')?.checked) {
-        statusFilter = 'expired';
-    }
-
-    const tbody = table.querySelector('tbody');
-    if (!tbody) return;
-    const trs = Array.from(tbody.getElementsByTagName('tr'));
-
-    for (let i = 0; i < trs.length; i++) {
-        const row = trs[i];
-        const mobileTd = row.getElementsByTagName('td')[1];
-        const statusTd = row.querySelector('.status-cell');
-
-        if (mobileTd && statusTd) {
-            const mobileValue = (mobileTd.textContent || mobileTd.innerText).trim().toUpperCase();
-            const statusValue = statusTd.dataset.status || '';
-
-            const matchesText = !textFilter || mobileValue.includes(textFilter);
-            const matchesStatus = (statusFilter === '') || (statusFilter === statusValue);
-
-            row.style.display = (matchesText && matchesStatus) ? '' : 'none';
-        }
-    }
+    applyMemberSearch();
 }
 
 let memberNameSortAsc = true; // Default: A-Z

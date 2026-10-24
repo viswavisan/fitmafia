@@ -5,7 +5,7 @@ import uuid
 
 import config
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from fit_mafia.constants import MEMBER_NOT_FOUND,INTERNAL_SERVER_ERROR
 from fit_mafia.models import Member, Session, Transaction, db
@@ -103,25 +103,68 @@ def home(session, request_args=None):
     except (ValueError, TypeError):
         txn_limit = default_limit
 
+    member_status = str(request_args.get('member_status') or '').strip().lower()
+    if member_status not in ('active', 'expired'):
+        member_status = ''
+
+    member_search = str(request_args.get('member_search') or '').strip()
+
     try:
         if role == 'admin':
-            member_offset = (member_page - 1) * member_limit
-            all_members = db.session.query(Member).order_by(
-                func.lower(func.trim(Member.first_name)).asc()
-            ).limit(member_limit).offset(member_offset).all()
+            today_str = datetime.date.today().isoformat()
 
             try:
                 total_members = int(db.session.query(Member).count())
             except (TypeError, ValueError):
-                total_members = len(all_members) if isinstance(all_members, list) else 0
+                total_members = 0
 
             try:
-                today_str = datetime.date.today().isoformat()
                 active_members = int(db.session.query(Member).filter(
                     Member.subscription_end_date.isnot(None),
                     Member.subscription_end_date >= today_str
                 ).count())
             except Exception:
+                active_members = 0
+
+            members_query = db.session.query(Member)
+            if member_status == 'active':
+                members_query = members_query.filter(
+                    Member.subscription_end_date.isnot(None),
+                    Member.subscription_end_date >= today_str
+                )
+            elif member_status == 'expired':
+                members_query = members_query.filter(
+                    or_(
+                        Member.subscription_end_date.is_(None),
+                        Member.subscription_end_date < today_str
+                    )
+                )
+
+            if member_search:
+                members_query = members_query.filter(
+                    Member.mobile_number.contains(member_search)
+                )
+
+            if member_status or member_search:
+                try:
+                    filtered_total_members = int(members_query.count())
+                except (TypeError, ValueError):
+                    filtered_total_members = 0
+            else:
+                filtered_total_members = total_members
+
+            member_offset = (member_page - 1) * member_limit
+            all_members = members_query.order_by(
+                func.lower(func.trim(Member.first_name)).asc()
+            ).limit(member_limit).offset(member_offset).all()
+
+            if total_members == 0 and not (member_status or member_search):
+                total_members = len(all_members) if isinstance(all_members, list) else 0
+                filtered_total_members = total_members
+            elif (member_status or member_search) and filtered_total_members == 0:
+                filtered_total_members = len(all_members) if isinstance(all_members, list) else 0
+
+            if active_members == 0 and total_members > 0:
                 active_members = sum(1 for m in all_members if getattr(m, 'status', None) == 'active')
 
             txn_offset = (txn_page - 1) * txn_limit
@@ -141,12 +184,14 @@ def home(session, request_args=None):
                 'total_members': total_members,
                 'active_members': active_members,
                 'inactive_members': max(0, total_members - active_members),
+                'member_status': member_status,
+                'member_search': member_search,
                 'member_pagination': {
                     'page': member_page,
                     'limit': member_limit,
-                    'total': total_members,
-                    'total_pages': max(1, (total_members + member_limit - 1) // member_limit),
-                    'has_next': member_page * member_limit < total_members,
+                    'total': filtered_total_members,
+                    'total_pages': max(1, (filtered_total_members + member_limit - 1) // member_limit),
+                    'has_next': member_page * member_limit < filtered_total_members,
                     'has_prev': member_page > 1
                 },
                 'transaction_pagination': {

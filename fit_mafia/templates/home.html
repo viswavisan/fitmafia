@@ -343,21 +343,32 @@
                     <div class="row mb-3 mt-3 g-2 align-items-center">
                         <div class="col-md-6 col-12">
                             <label for="mobileSearch" class="visually-hidden">Search by Mobile Number</label>
-                            <input type="text" id="mobileSearch" class="form-control"
-                                placeholder="Search by Mobile Number..." onkeyup="searchByMobile()">
+                            <div class="input-group">
+                                <input type="text" id="mobileSearch" class="form-control"
+                                    placeholder="Search by Mobile Number..." value="{{ member_search|default('') }}"
+                                    onkeydown="if(event.key==='Enter'){ applyMemberSearch(); }">
+                                <button class="btn btn-outline-secondary" type="button" onclick="applyMemberSearch()">
+                                    <i class="bi bi-search"></i> Search
+                                </button>
+                                {% if member_search %}
+                                <button class="btn btn-outline-danger" type="button" onclick="clearMemberSearch()" title="Clear Search">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="col-md-6 col-12 d-flex justify-content-md-end">
                             <nav class="btn-group" aria-label="Status filter">
                                 <input type="radio" class="btn-check" name="statusFilter" id="filterAll" value=""
-                                    autocomplete="off" checked onchange="applyMemberFilter()">
+                                    autocomplete="off" {% if not member_status %}checked{% endif %} onchange="filterMembers('')">
                                 <label class="btn btn-outline-primary" for="filterAll">All</label>
 
                                 <input type="radio" class="btn-check" name="statusFilter" id="filterActive"
-                                    value="active" autocomplete="off" onchange="applyMemberFilter()">
+                                    value="active" autocomplete="off" {% if member_status == 'active' %}checked{% endif %} onchange="filterMembers('active')">
                                 <label class="btn btn-outline-success" for="filterActive">Active</label>
 
                                 <input type="radio" class="btn-check" name="statusFilter" id="filterExpired"
-                                    value="expired" autocomplete="off" onchange="applyMemberFilter()">
+                                    value="expired" autocomplete="off" {% if member_status == 'expired' %}checked{% endif %} onchange="filterMembers('expired')">
                                 <label class="btn btn-outline-secondary" for="filterExpired">Inactive</label>
                             </nav>
                         </div>
@@ -414,6 +425,10 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">No members found.</td>
+                                    </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -422,7 +437,7 @@
                         <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2 border-top pt-3" id="membersPaginationContainer">
                             <div class="d-flex align-items-center gap-2">
                                 <label for="membersPageSize" class="text-muted small mb-0">Show:</label>
-                                <select id="membersPageSize" class="form-select form-select-sm w-auto" onchange="window.location.href='/home?section=members&member_limit=' + this.value + '&member_page=1'">
+                                <select id="membersPageSize" class="form-select form-select-sm w-auto" onchange="changeMembersPageSize(this.value)">
                                     {% if member_pagination and member_pagination.limit not in [25, 50, 100, 200] %}
                                     <option value="{{ member_pagination.limit }}" selected>{{ member_pagination.limit }}</option>
                                     {% endif %}
@@ -443,19 +458,19 @@
                             <nav aria-label="Members pagination">
                                 <ul class="pagination pagination-sm mb-0">
                                     <li class="page-item {% if not member_pagination.has_prev %}disabled{% endif %}">
-                                        <a class="page-link" href="/home?section=members&member_page={{ member_pagination.page - 1 }}&member_limit={{ member_pagination.limit }}" aria-label="Previous">&laquo; Prev</a>
+                                        <a class="page-link" href="/home?section=members&member_page={{ member_pagination.page - 1 }}&member_limit={{ member_pagination.limit }}{% if member_status %}&member_status={{ member_status }}{% endif %}{% if member_search %}&member_search={{ member_search }}{% endif %}" aria-label="Previous">&laquo; Prev</a>
                                     </li>
                                     {% for p in range(1, member_pagination.total_pages + 1) %}
                                     {% if p == member_pagination.page or (p >= member_pagination.page - 2 and p <= member_pagination.page + 2) or p == 1 or p == member_pagination.total_pages %}
                                     <li class="page-item {% if p == member_pagination.page %}active{% endif %}">
-                                        <a class="page-link" href="/home?section=members&member_page={{ p }}&member_limit={{ member_pagination.limit }}">{{ p }}</a>
+                                        <a class="page-link" href="/home?section=members&member_page={{ p }}&member_limit={{ member_pagination.limit }}{% if member_status %}&member_status={{ member_status }}{% endif %}{% if member_search %}&member_search={{ member_search }}{% endif %}">{{ p }}</a>
                                     </li>
                                     {% elif p == member_pagination.page - 3 or p == member_pagination.page + 3 %}
                                     <li class="page-item disabled"><span class="page-link">...</span></li>
                                     {% endif %}
                                     {% endfor %}
                                     <li class="page-item {% if not member_pagination.has_next %}disabled{% endif %}">
-                                        <a class="page-link" href="/home?section=members&member_page={{ member_pagination.page + 1 }}&member_limit={{ member_pagination.limit }}" aria-label="Next">Next &raquo;</a>
+                                        <a class="page-link" href="/home?section=members&member_page={{ member_pagination.page + 1 }}&member_limit={{ member_pagination.limit }}{% if member_status %}&member_status={{ member_status }}{% endif %}{% if member_search %}&member_search={{ member_search }}{% endif %}" aria-label="Next">Next &raquo;</a>
                                     </li>
                                 </ul>
                             </nav>
