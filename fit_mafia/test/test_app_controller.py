@@ -1427,4 +1427,48 @@ def test_home_admin_filter_search(mock_db_session):
     assert mock_member_query.filter.called
 
 
+def test_database_remove_releases_sessions():
+    from database import Database
+    db_test = Database("sqlite:///:memory:", "sqlite:///:memory:")
+    with patch.object(db_test._real_session, 'remove') as mock_real_remove, \
+         patch.object(db_test._demo_session, 'remove') as mock_demo_remove:
+        db_test.remove()
+        mock_real_remove.assert_called_once()
+        mock_demo_remove.assert_called_once()
+
+
+def test_dynamic_session_proxy_remove():
+    from database import DynamicSessionProxy
+    mock_real = MagicMock()
+    mock_demo = MagicMock()
+    proxy = DynamicSessionProxy(mock_real, lambda: mock_demo)
+    proxy.remove()
+    mock_real.remove.assert_called_once()
+    mock_demo.remove.assert_called_once()
+
+
+def test_main_app_teardown_invokes_db_remove():
+    from main import main_app
+    from fit_mafia.models import db
+    client = main_app.test_client()
+    with patch.object(db, 'remove') as mock_remove:
+        client.get('/health_check')
+        mock_remove.assert_called_once()
+
+
+def test_create_engine_pool_parameters_from_config():
+    from database import _create_engine
+    with patch('database.create_engine') as mock_engine_init:
+        _create_engine('postgresql://user:pass@localhost:5432/testdb')
+        mock_engine_init.assert_called_once()
+        _, kwargs = mock_engine_init.call_args
+        assert kwargs.get('pool_pre_ping') is True
+        assert kwargs.get('pool_size') == 20
+        assert kwargs.get('max_overflow') == 20
+        assert kwargs.get('pool_recycle') == 1800
+        assert kwargs.get('pool_timeout') == 30
+
+
+
+
 

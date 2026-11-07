@@ -1,4 +1,5 @@
 import os
+import config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
@@ -27,6 +28,13 @@ class DynamicSessionProxy:
     def __call__(self, *args, **kwargs):
         return self._get_current_session()(*args, **kwargs)
 
+    def remove(self):
+        self._real_session.remove()
+        try:
+            self._demo_session_getter().remove()
+        except Exception:
+            pass
+
     def __repr__(self):
         return repr(self._get_current_session())
 
@@ -49,6 +57,37 @@ def _create_engine(url, default_file="fitmafia.db"):
     elif url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
 
+    if not url.startswith("sqlite"):
+        kwargs.setdefault("pool_pre_ping", True)
+
+        pool_recycle = (
+            config.get_property("database", "pool_recycle")
+            or os.getenv("DB_POOL_RECYCLE")
+            or "1800"
+        )
+        kwargs.setdefault("pool_recycle", int(pool_recycle))
+
+        pool_size = (
+            config.get_property("database", "pool_size")
+            or os.getenv("DB_POOL_SIZE")
+        )
+        if pool_size:
+            kwargs["pool_size"] = int(pool_size)
+
+        max_overflow = (
+            config.get_property("database", "max_overflow")
+            or os.getenv("DB_MAX_OVERFLOW")
+        )
+        if max_overflow:
+            kwargs["max_overflow"] = int(max_overflow)
+
+        pool_timeout = (
+            config.get_property("database", "pool_timeout")
+            or os.getenv("DB_POOL_TIMEOUT")
+        )
+        if pool_timeout:
+            kwargs["pool_timeout"] = int(pool_timeout)
+
     return create_engine(url, **kwargs)
 
 
@@ -64,6 +103,11 @@ class Database:
 
         # Dynamic session proxy routes requests with session['is_demo'] to demo sandbox
         self.session = DynamicSessionProxy(self._real_session, lambda: self._demo_session)
+
+    def remove(self):
+        """Removes all scoped sessions, releasing checked-out connections back to the pool."""
+        self._real_session.remove()
+        self._demo_session.remove()
 
     def init_db(self):
         """Creates all tables from model definitions if not already present."""

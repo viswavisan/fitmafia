@@ -145,3 +145,10 @@ def delete_member(mobile_number=None):
     response = app_controller.delete_member(session, mobile_number)
     return jsonify({'status': response['status'], 'message': response['message']}), response.get('code', 200)
 
+
+@app.teardown_request
+def teardown_request(exception=None):
+    from fit_mafia.models import db
+    db.remove()
+
+
